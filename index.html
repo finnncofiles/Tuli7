@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TULI7 v23.3 6-digit PIN</title>
+<title>TULI7 v23.2 4-digit PIN</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <style>
@@ -113,13 +113,13 @@
     <h2>Create Session</h2>
     <div class="card">
       <input id="sessionNameInput" placeholder="Session name, e.g. FIRE7" />
-      <input id="sessionPinInput" type="password" inputmode="numeric" placeholder="6-digit PIN, e.g. 123456" maxlength="6" />
-      <button class="pill" id="randomPinBtn" style="margin-bottom:10px;">RANDOM 6-DIGIT PIN</button>
+      <input id="sessionPinInput" type="password" inputmode="numeric" placeholder="4-digit PIN, e.g. 1234" maxlength="4" />
+      <button class="pill" id="randomPinBtn" style="margin-bottom:10px;">RANDOM 4-DIGIT PIN</button>
       <div class="row2">
         <button class="btn" id="createBackBtn">BACK</button>
         <button class="btn" id="createSessionBtn">CREATE</button>
       </div>
-      <div class="muted">Sessions use a 6-digit PIN. Leave empty until you choose one. Sessions are intended to expire automatically.</div>
+      <div class="muted">Sessions use a 4-digit PIN. Leave empty until you choose one. Sessions are intended to expire automatically.</div>
     </div>
   </div>
 </div>
@@ -131,7 +131,7 @@
       <div class="sessionbox">
         <div class="sessiontitle" id="createdSessionName">FIRE7</div>
         <div class="smallcenter">PIN</div>
-        <div class="idbox" id="createdSessionPin">123456</div>
+        <div class="idbox" id="createdSessionPin">1234</div>
         <div class="smallcenter">Share this session name and PIN with players.</div>
       </div>
       <div class="row2">
@@ -147,7 +147,7 @@
     <h2>Join Session</h2>
     <div class="card">
       <input id="joinSessionNameInput" placeholder="Session name" />
-      <input id="joinSessionPinInput" type="password" inputmode="numeric" placeholder="6-digit PIN" maxlength="6" />
+      <input id="joinSessionPinInput" type="password" inputmode="numeric" placeholder="4-digit PIN" maxlength="4" />
       <div class="row2">
         <button class="btn" id="joinBackBtn">BACK</button>
         <button class="btn" id="joinContinueBtn">CONTINUE</button>
@@ -227,7 +227,7 @@
         <div class="smallcenter">Active session</div>
         <div class="sessiontitle" id="trainerSessionName">FIRE7</div>
         <div class="smallcenter">PIN</div>
-        <div class="idbox" id="trainerSessionPin">123456</div>
+        <div class="idbox" id="trainerSessionPin">1234</div>
       </div>
     </div>
 
@@ -316,16 +316,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./tuli7_supabase_client_v233.js"></script>
-<script>
-const { createSession: sbCreateSession, joinSession: sbJoinSession, listSessionPlayers, listSessionZones, addPlayer: sbAddPlayer, updatePlayerState, createZone: sbCreateZone, updateSessionStatus, logEvent: sbLogEvent, subscribeToSession } = window.Tuli7Supabase;
+<script type="module">
+import { createSession as sbCreateSession, joinSession as sbJoinSession, listSessionPlayers, listSessionZones, addPlayer as sbAddPlayer, updatePlayerState, createZone as sbCreateZone, updateSessionStatus, logEvent as sbLogEvent, subscribeToSession } from './tuli7_supabase_client_v231.js';
 
 (function () {
-  if (!window.Tuli7Supabase || !window.Tuli7Supabase.ready) {
-    alert('Supabase client failed to load');
-    return;
-  }
   const API_KEY = "bed0c8b5-f42c-49fe-af0a-52da582dd0aa";
   const weaponProfiles = {
     "81mm":  { name:"81mm KRH",  r1:30,  r2:70,  r3:120 },
@@ -344,12 +338,12 @@ const { createSession: sbCreateSession, joinSession: sbJoinSession, listSessionP
 
   const q = id => document.getElementById(id);
 
-  function generatePin6(){
-    return String(Math.floor(100000 + Math.random() * 900000));
+  function generatePin4(){
+    return String(Math.floor(1000 + Math.random() * 9000));
   }
 
-  function validPin6(pin){
-    return /^\d{6}$/.test(pin);
+  function validPin4(pin){
+    return /^\d{4}$/.test(pin);
   }
 
   function show(id){
@@ -1028,7 +1022,7 @@ const { createSession: sbCreateSession, joinSession: sbJoinSession, listSessionP
     q("createFlowBtn").addEventListener("click", () => { q("sessionPinInput").value = ""; show("createSessionScreen"); });
     q("joinFlowBtn").addEventListener("click", () => show("joinSessionScreen"));
     q("createBackBtn").addEventListener("click", () => show("home"));
-    q("randomPinBtn").addEventListener("click", () => { q("sessionPinInput").value = generatePin6(); });
+    q("randomPinBtn").addEventListener("click", () => { q("sessionPinInput").value = generatePin4(); });
     q("joinBackBtn").addEventListener("click", () => show("home"));
     q("sideBackBtn").addEventListener("click", () => show("joinSessionScreen"));
     q("playerDoneBtn").addEventListener("click", () => { stopPlayerGpsWatch(); state.currentPlayerDbId = null; show("home"); });
@@ -1040,19 +1034,19 @@ const { createSession: sbCreateSession, joinSession: sbJoinSession, listSessionP
       const name = q("sessionNameInput").value.trim();
       const pin = q("sessionPinInput").value.trim();
       if (!name || !pin) return;
-      if (!validPin6(pin)) { alert('PIN must be 6 digits'); return; }
+      if (!validPin4(pin)) { alert('PIN must be 4 digits'); return; }
       try {
         const row = await sbCreateSession(name, pin);
         state.sessionId = row.id;
         state.sessionName = row.session_name;
-        state.sessionPin = pin;
+        state.sessionPin = row.pin;
         state.currentRole = 'trainer';
         syncSessionLabels();
         await ensureSessionSubscription();
         await sbLogEvent(state.sessionId, 'session_created', { session_name: state.sessionName });
         show("sessionCreatedScreen");
       } catch (e) {
-        alert("Create session failed: " + (e?.message || String(e)));
+        alert("Create session failed");
       }
     });
 
@@ -1060,20 +1054,20 @@ const { createSession: sbCreateSession, joinSession: sbJoinSession, listSessionP
       const name = q("joinSessionNameInput").value.trim().toUpperCase();
       const pin = q("joinSessionPinInput").value.trim();
       if (!name || !pin) { q("joinMsg").textContent = "Enter session name and PIN."; return; }
-      if (!validPin6(pin)) { q("joinMsg").textContent = 'PIN must be 6 digits'; return; }
+      if (!validPin4(pin)) { q("joinMsg").textContent = 'PIN must be 4 digits'; return; }
       try {
         const row = await sbJoinSession(name, pin);
         if (!row) { q("joinMsg").textContent = "Session not found"; return; }
         state.sessionId = row.id;
         state.sessionName = row.session_name;
-        state.sessionPin = pin;
+        state.sessionPin = row.pin;
         state.currentRole = 'player';
         syncSessionLabels();
         await ensureSessionSubscription();
         q("joinMsg").textContent = "Session OK";
         show("sideScreen");
       } catch (e) {
-        q("joinMsg").textContent = "Join failed: " + (e?.message || String(e));
+        q("joinMsg").textContent = "Join failed";
       }
     });
 
@@ -1092,7 +1086,7 @@ const { createSession: sbCreateSession, joinSession: sbJoinSession, listSessionP
         await refreshPlayersFromDb();
         show("playerScreen");
       } catch (e) {
-        alert("Add BLUE player failed: " + (e?.message || String(e)));
+        alert("Add BLUE player failed");
       }
     });
 
@@ -1111,7 +1105,7 @@ const { createSession: sbCreateSession, joinSession: sbJoinSession, listSessionP
         await refreshPlayersFromDb();
         show("playerScreen");
       } catch (e) {
-        alert("Add RED player failed: " + (e?.message || String(e)));
+        alert("Add RED player failed");
       }
     });
 
