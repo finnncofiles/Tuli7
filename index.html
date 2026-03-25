@@ -1,1232 +1,181 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fi">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TULI7 v23.2 4-digit PIN</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-<style>
-  :root{
-    --bg:#070b12; --card:#0f172a; --line:#223147; --text:#f3f4f6; --muted:#9ca3af;
-    --chip:#1e293b; --blue:#2563eb; --btn:#e5e7eb; --btntext:#111827;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
-  .screen{display:none;min-height:100vh;padding:18px 14px}
-  .screen.active{display:block}
-  .wrap{width:min(980px,100%);margin:0 auto}
-  h1{font-size:50px;text-align:center;margin:24px 0 14px}
-  h2{font-size:28px;text-align:center;margin:14px 0}
-  h3{font-size:20px;margin:8px 0 12px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0}
-  .btn{width:100%;padding:18px;border:none;border-radius:16px;background:var(--btn);color:var(--btntext);font-size:22px;font-weight:700;margin:8px 0;cursor:pointer}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-  .row4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .row5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-  .pill{padding:14px 10px;border:none;border-radius:14px;background:var(--chip);color:#fff;font-size:18px;font-weight:700;cursor:pointer}
-  .pill.active{background:var(--blue)}
-  .weapon{padding:12px 8px;font-size:15px;line-height:1.15}
-  .muted{text-align:center;color:var(--muted)}
-  .smallcenter{text-align:center;font-size:15px;color:#cbd5e1}
-  input{
-    width:100%;padding:16px;font-size:22px;border-radius:14px;border:1px solid var(--line);
-    background:#0b1220;color:#fff;margin:8px 0 14px
-  }
-  .idbox{text-align:center;font-size:52px;font-weight:800;margin:18px 0 8px}
-  .status{text-align:center;font-size:24px;margin-bottom:12px}
-  .ok{color:#86efac}.sup{color:#fde68a}.wia{color:#fca5a5}.kia{color:#cbd5e1}
-  .banner{text-align:center;padding:12px;border-radius:14px;background:#1f2937;border:1px solid var(--line);font-size:20px;font-weight:700;margin-bottom:12px;color:#dbeafe;}
-  #map{height:460px;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
-  .leaflet-container{background:#0b1320}
-  .event{padding:10px;border-radius:12px;background:#0b1220;border:1px solid var(--line);margin:8px 0;font-size:14px}
-  .toptools{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
-  .target-label,.you-label{
-    background:rgba(4,8,16,.85);border:1px solid #223147;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700
-  }
-  .target-label{color:#fde68a}.you-label{color:#dbeafe}
-  .draw-actions{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-  .draw-actions.show{display:grid}
-  .pending-note{display:none;margin-top:10px;text-align:center;color:#dbeafe;font-size:14px}
-  .pending-note.show{display:block}
-  .sessionbox{border:1px solid var(--line); border-radius:16px; padding:16px; background:#0b1220; margin-top:8px;}
-  .sessiontitle{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px}
-  .roster-toggle{
-    width:100%; padding:14px 16px; border:none; border-radius:14px; background:var(--chip); color:#fff;
-    font-size:18px; font-weight:700; text-align:left; cursor:pointer;
-  }
-  .roster-summary{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px;}
-  .roster-stat{background:#0b1220; border:1px solid var(--line); border-radius:12px; padding:10px; text-align:center; font-size:15px; color:#dbeafe; font-weight:700;}
-  .roster-panel{display:none; margin-top:12px;}
-  .roster-panel.show{display:block;}
-  .roster-list{display:grid; gap:8px;}
-  .roster-row{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; background:#0b1220; border:1px solid var(--line); border-radius:12px; padding:10px 12px;}
-  .roster-left{display:flex; align-items:center; gap:10px;}
-  .roster-dot{width:12px; height:12px; border-radius:50%;}
-  .roster-name{font-weight:700;}
-  .roster-status{font-size:14px; color:var(--muted);}
-  .more-line{text-align:center; color:var(--muted); font-size:14px; margin-top:6px;}
-  @media (max-width:760px){
-    h1{font-size:42px}
-    .pill{font-size:16px;padding:12px 8px}
-    .weapon{font-size:13px}
-    .btn{font-size:20px}
-    #map{height:380px}
-    .idbox{font-size:46px}
-    .row5{grid-template-columns:repeat(2,1fr)}
-    .toptools{grid-template-columns:1fr}
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TULI7 Online v1</title>
+  <style>
+    :root{
+      --bg:#050914; --card:#0b1733; --line:#1f3561; --text:#eef2ff; --muted:#aeb8d4;
+      --btn:#eef0f6; --btntext:#111827; --blue:#2563eb; --red:#dc2626; --chip:#14213f;
+      --ok:#86efac; --warn:#fde68a; --bad:#fca5a5;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    .screen{display:none;min-height:100vh;padding:18px 14px}
+    .screen.active{display:block}
+    .wrap{width:min(760px,100%);margin:0 auto}
+    h1{font-size:54px;text-align:center;margin:22px 0 18px}
+    h2{font-size:30px;text-align:center;margin:10px 0 16px}
+    h3{font-size:22px;margin:0 0 12px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px;margin:14px 0}
+    .btn{width:100%;padding:18px;margin:8px 0;border:none;border-radius:18px;background:var(--btn);color:var(--btntext);font-size:22px;font-weight:800;cursor:pointer}
+    .btn.small{font-size:18px;padding:14px}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    input{width:100%;padding:16px;border-radius:16px;border:1px solid var(--line);background:#081022;color:#fff;font-size:22px;margin:8px 0 12px}
+    .muted{color:var(--muted);text-align:center;font-size:16px;line-height:1.4}
+    .sessionbox{border:1px solid var(--line);border-radius:18px;background:#071022;padding:18px;text-align:center}
+    .sessiontitle{font-size:28px;font-weight:800}
+    .pin{font-size:54px;font-weight:900;letter-spacing:2px;margin:10px 0}
+    .banner{text-align:center;background:#16233d;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:22px;font-weight:800;margin-bottom:10px}
+    .status{font-size:26px;font-weight:800;text-align:center}
+    .ok{color:var(--ok)} .sup{color:var(--warn)} .wia,.kia{color:var(--bad)}
+    .small{text-align:center;color:#dbe5ff;font-size:15px}
+    .pill{width:100%;padding:14px 10px;border:none;border-radius:14px;font-size:17px;font-weight:800;cursor:pointer;background:var(--chip);color:#fff}
+    .pill.blue{background:var(--blue)} .pill.red{background:var(--red)} .pill.gray{background:#334155}
+    .list{display:grid;gap:8px}
+    .item{background:#071022;border:1px solid var(--line);border-radius:14px;padding:12px}
+    .msg{margin-top:10px;padding:10px 12px;border-radius:12px;background:#0d1c39;border:1px solid var(--line);color:#dbe5ff;min-height:44px;font-size:15px;line-height:1.35;white-space:pre-wrap}
+    @media (max-width:680px){h1{font-size:44px}.btn{font-size:20px}.row2,.row3{grid-template-columns:1fr}.pin{font-size:46px}}
+  </style>
 </head>
 <body>
-
-<div id="home" class="screen active">
-  <div class="wrap">
-    <h1>TULI7</h1>
-    <div class="card">
-      <button class="btn" id="createFlowBtn">CREATE SESSION</button>
-      <button class="btn" id="joinFlowBtn">JOIN SESSION</button>
-      <div class="muted">Trainer creates a session. Players join it with session name and PIN. v22 uses Supabase for live sessions.</div>
-    </div>
-    <div class="card">
-      <h3>What is TULI7?</h3>
-      <div class="muted" style="text-align:left; font-size:15px; line-height:1.45">
-        TULI7 is a lightweight training tool for simulating battlefield effects.<br><br>
-        Trainer can create ARTY, MINES and CBRN effects on a map. Players receive vibration and sound cues and learn to recognize effects without relying on the screen.<br><br>
-        Purpose: improve understanding of modern battlefield effects in a simple, mobile-first way. Critical alerts can also appear as lock screen notifications.
+  <div id="home" class="screen active">
+    <div class="wrap">
+      <h1>TULI7</h1>
+      <div class="card">
+        <button class="btn" id="openCreateBtn">CREATE SESSION</button>
+        <button class="btn" id="openJoinBtn">JOIN SESSION</button>
+        <div class="muted">Online v1. Vain session luonti, liittyminen, side-valinta ja rosteri.</div>
       </div>
-    </div>
-    <div class="card">
-      <h3>Safety and privacy</h3>
-      <div class="muted" style="text-align:left; font-size:15px; line-height:1.45">
-        TULI7 is a training and simulation tool. It does not model real battlefield effects exactly and does not replace official safety procedures or command.<br><br>
-        Use only exercise identifiers such as BLUE 1 or RED 2. Do not use real names.<br><br>
-        Session data, player state and exercise location may be processed during the exercise. Sessions are intended to expire automatically and are not meant for long-term storage.
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="createSessionScreen" class="screen">
-  <div class="wrap">
-    <h2>Create Session</h2>
-    <div class="card">
-      <input id="sessionNameInput" placeholder="Session name, e.g. FIRE7" />
-      <input id="sessionPinInput" type="password" inputmode="numeric" placeholder="4-digit PIN, e.g. 1234" maxlength="4" />
-      <button class="pill" id="randomPinBtn" style="margin-bottom:10px;">RANDOM 4-DIGIT PIN</button>
-      <div class="row2">
-        <button class="btn" id="createBackBtn">BACK</button>
-        <button class="btn" id="createSessionBtn">CREATE</button>
-      </div>
-      <div class="muted">Sessions use a 4-digit PIN. Leave empty until you choose one. Sessions are intended to expire automatically.</div>
-    </div>
-  </div>
-</div>
-
-<div id="sessionCreatedScreen" class="screen">
-  <div class="wrap">
-    <h2>Session Created</h2>
-    <div class="card">
-      <div class="sessionbox">
-        <div class="sessiontitle" id="createdSessionName">FIRE7</div>
-        <div class="smallcenter">PIN</div>
-        <div class="idbox" id="createdSessionPin">1234</div>
-        <div class="smallcenter">Share this session name and PIN with players.</div>
-      </div>
-      <div class="row2">
-        <button class="btn" id="createdBackHomeBtn">HOME</button>
-        <button class="btn" id="createdOpenTrainerBtn">OPEN TRAINER</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="joinSessionScreen" class="screen">
-  <div class="wrap">
-    <h2>Join Session</h2>
-    <div class="card">
-      <input id="joinSessionNameInput" placeholder="Session name" />
-      <input id="joinSessionPinInput" type="password" inputmode="numeric" placeholder="4-digit PIN" maxlength="4" />
-      <div class="row2">
-        <button class="btn" id="joinBackBtn">BACK</button>
-        <button class="btn" id="joinContinueBtn">CONTINUE</button>
-      </div>
-      <div class="muted" id="joinMsg">Enter session name and PIN.</div>
-    </div>
-  </div>
-</div>
-
-<div id="sideScreen" class="screen">
-  <div class="wrap">
-    <h2>Select Side</h2>
-    <div class="card">
-      <div class="row2">
-        <button class="btn" id="blueBtn">BLUE</button>
-        <button class="btn" id="redBtn">RED</button>
-      </div>
-      <button class="btn" id="sideBackBtn">BACK</button>
-    </div>
-  </div>
-</div>
-
-<div id="playerScreen" class="screen">
-  <div class="wrap">
-    <h2>Player View</h2>
-    <div class="card">
-      <div id="playerBanner" class="banner">READY</div>
-      <div id="playerSessionInfo" class="smallcenter" style="margin-bottom:8px">Session: FIRE7</div>
-      <div id="playerId" class="idbox">BLUE 1</div>
-      <div id="playerStatus" class="status ok">STATUS: OK</div>
-      <div id="playerCause" class="smallcenter" style="margin-bottom:12px">CAUSE: NONE</div>
-      <button class="roster-toggle" id="enableAlertsBtn">ENABLE LOCK SCREEN ALERTS</button>
-      <div class="card" style="margin-top:12px;">
-        <div class="smallcenter" style="margin-bottom:8px">Geofence engine</div>
+      <div class="card">
+        <h3>Status</h3>
+        <div id="homeStatus" class="msg">App loaded. Ready for Supabase init.</div>
         <div class="row2">
-          <button class="pill" id="playerGpsStartBtn">START GPS</button>
-          <button class="pill" id="playerGpsStopBtn">STOP GPS</button>
+          <button class="btn small" id="healthCheckBtn">SUPABASE CHECK</button>
+          <button class="btn small" id="clearDebugBtn">CLEAR DEBUG</button>
         </div>
-        <div class="muted" id="playerGpsInfo" style="margin-top:10px">GPS inactive</div>
-        <div class="muted" id="playerZoneInfo" style="margin-top:6px">Zone: NONE</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="createScreen" class="screen">
+    <div class="wrap">
+      <h2>Create Session</h2>
+      <div class="card">
+        <input id="createName" placeholder="Session name, esim. FIRE7" />
+        <input id="createPin" inputmode="numeric" maxlength="6" placeholder="6-digit PIN, esim. 123456" />
+        <div class="row2">
+          <button class="btn small" id="randomPinBtn">RANDOM PIN</button>
+          <button class="btn small" id="createBackBtn">BACK</button>
+        </div>
+        <button class="btn" id="createSessionBtn">CREATE</button>
+        <div class="msg" id="createMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="createdScreen" class="screen">
+    <div class="wrap">
+      <h2>Session Created</h2>
+      <div class="card">
+        <div class="sessionbox">
+          <div class="sessiontitle" id="createdName">FIRE7</div>
+          <div class="small">PIN</div>
+          <div class="pin" id="createdPin">123456</div>
+          <div class="small">Jaa nimi ja PIN pelaajille</div>
+        </div>
+        <div class="row2">
+          <button class="btn" id="createdHomeBtn">HOME</button>
+          <button class="btn" id="openTrainerBtn">OPEN TRAINER</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="joinScreen" class="screen">
+    <div class="wrap">
+      <h2>Join Session</h2>
+      <div class="card">
+        <input id="joinName" placeholder="Session name" />
+        <input id="joinPin" inputmode="numeric" maxlength="6" placeholder="6-digit PIN" />
+        <div class="row2">
+          <button class="btn" id="joinBackBtn">BACK</button>
+          <button class="btn" id="joinContinueBtn">CONTINUE</button>
+        </div>
+        <div class="msg" id="joinMsg">Syötä session name ja PIN.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sideScreen" class="screen">
+    <div class="wrap">
+      <h2>Select Side</h2>
+      <div class="card">
+        <div class="row2">
+          <button class="btn" id="blueBtn">BLUE</button>
+          <button class="btn" id="redBtn">RED</button>
+        </div>
+        <button class="btn" id="sideBackBtn">BACK</button>
+        <div class="msg" id="sideMsg">Valitse puoli.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="playerScreen" class="screen">
+    <div class="wrap">
+      <h2>Player View</h2>
+      <div class="card">
+        <div class="banner" id="playerBanner">READY</div>
+        <div class="small" id="playerSessionLine">Session: FIRE7</div>
+        <div class="pin" id="playerCode" style="font-size:44px">BLUE 1</div>
+        <div class="status ok" id="playerStatus">STATUS: OK</div>
+        <div class="small" id="playerCause">CAUSE: NONE</div>
+        <div class="row3" style="margin-top:14px">
+          <button class="pill gray" id="playerSupBtn">SUP</button>
+          <button class="pill gray" id="playerWiaBtn">WIA</button>
+          <button class="pill gray" id="playerKiaBtn">KIA</button>
+        </div>
+        <div class="row2" style="margin-top:12px">
+          <button class="btn small" id="playerResetBtn">RESET</button>
+          <button class="btn small" id="playerHomeBtn">HOME</button>
+        </div>
+        <div class="msg" id="playerMsg">Pelaaja lisätty Supabase-rosteriin.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="trainerScreen" class="screen">
+    <div class="wrap">
+      <h2>Trainer</h2>
+      <div class="card">
+        <div class="sessionbox">
+          <div class="small">Active session</div>
+          <div class="sessiontitle" id="trainerSessionName">FIRE7</div>
+          <div class="small">PIN</div>
+          <div class="pin" id="trainerPin">123456</div>
+        </div>
+        <div class="row2" style="margin-top:12px">
+          <button class="btn small" id="trainerHomeBtn">HOME</button>
+          <button class="btn small" id="trainerRefreshBtn">REFRESH ROSTER</button>
+        </div>
       </div>
 
-      <button class="roster-toggle" id="testToggleBtn">▼ TEST ALERTS</button>
-      <div class="roster-panel" id="testPanel">
+      <div class="card">
+        <h3>Roster</h3>
         <div class="row3">
-          <button class="pill" id="testIncomingBtn">INCOMING</button>
-          <button class="pill" id="testImpactBtn">IMPACT</button>
-          <button class="pill" id="testMineBtn">MINE</button>
+          <button class="pill blue" id="blueCountBtn">BLUE: 0</button>
+          <button class="pill red" id="redCountBtn">RED: 0</button>
+          <button class="pill gray" id="totalCountBtn">TOTAL: 0</button>
         </div>
-        <div class="row2" style="margin-top:10px;">
-          <button class="pill" id="testCbrnBtn">CBRN</button>
-          <button class="pill" id="testStopBtn">STOP</button>
-        </div>
-        <div class="muted">Use before exercise</div>
-      </div>
-
-      <div class="row3" style="margin-top:10px;">
-        <button class="pill" id="supBtn">SUP</button>
-        <button class="pill" id="wiaBtn">WIA</button>
-        <button class="pill" id="kiaBtn">KIA</button>
-      </div>
-      <div class="row3" style="margin-top:10px;">
-        <button class="pill" id="incomingBtn">INCOMING</button>
-        <button class="pill" id="resetPlayerBtn">RESET</button>
-        <button class="pill" id="playerDoneBtn">HOME</button>
+        <div class="list" id="rosterList" style="margin-top:12px"></div>
+        <div class="msg" id="trainerMsg">Ei pelaajia vielä.</div>
       </div>
     </div>
   </div>
-</div>
 
-<div id="trainerScreen" class="screen">
-  <div class="wrap">
-    <h2 id="trainerRoomTitle">FIRE7 / TRAINER</h2>
-
-    <div class="card">
-      <div class="sessionbox">
-        <div class="smallcenter">Active session</div>
-        <div class="sessiontitle" id="trainerSessionName">FIRE7</div>
-        <div class="smallcenter">PIN</div>
-        <div class="idbox" id="trainerSessionPin">1234</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="roster-summary">
-        <div class="roster-stat" id="blueCountStat">BLUE: 0</div>
-        <div class="roster-stat" id="redCountStat">RED: 0</div>
-        <div class="roster-stat" id="totalCountStat">TOTAL: 0</div>
-      </div>
-      <button class="roster-toggle" id="rosterToggleBtn">▼ ROSTER</button>
-      <div class="roster-panel" id="rosterPanel">
-        <div class="roster-list" id="rosterList"></div>
-        <div class="more-line" id="rosterMoreLine"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div id="map"></div>
-      <div class="pending-note" id="pendingNote">Area pending. Confirm with OK or discard with CANCEL.</div>
-      <div class="draw-actions" id="drawActions">
-        <button class="btn" id="drawOkBtn">OK</button>
-        <button class="btn" id="drawCancelBtn">CANCEL</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Mode</h3>
-      <div class="row3">
-        <button class="pill active" data-mode="arty">ARTY</button>
-        <button class="pill" data-mode="mines">MINES</button>
-        <button class="pill" data-mode="cbrn">CBRN</button>
-      </div>
-      <div class="muted" id="modeLabel" style="margin-top:10px;">Mode: ARTY</div>
-
-      <div id="weaponCard" style="margin-top:14px;">
-        <h3>Weapon</h3>
-        <div class="row5">
-          <button class="pill weapon active" data-weapon="81mm">81mm KRH</button>
-          <button class="pill weapon" data-weapon="120mm">120mm KRH</button>
-          <button class="pill weapon" data-weapon="122mm">122mm</button>
-          <button class="pill weapon" data-weapon="155mm">155mm</button>
-          <button class="pill weapon" data-weapon="rocket">LIGHT RKT</button>
-        </div>
-        <div class="muted" id="weaponLabel" style="margin-top:10px;">Selected: 81mm KRH</div>
-      </div>
-    </div>
-
-    <div class="card" id="delayCard">
-      <div style="font-size:38px;font-weight:800;text-align:center;margin:10px 0 14px" id="delayLabel">Delay: 5s</div>
-      <div class="row3">
-        <button class="pill" data-delay="0">NOW</button>
-        <button class="pill active" data-delay="5">5s</button>
-        <button class="pill" data-delay="10">10s</button>
-      </div>
-      <div class="row3" style="margin-top:10px;">
-        <button class="pill" data-delay="30">30s</button>
-        <button class="pill" data-delay="60">60s</button>
-        <button class="pill" data-delay="120">120s</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="toptools">
-        <button class="pill" id="baseTaustaBtn">TAUSTAKARTTA</button>
-        <button class="pill" id="baseMaastoBtn">MAASTOKARTTA</button>
-        <button class="pill" id="locBtn">GET MY LOCATION</button>
-        <button class="pill" id="clearTargetsBtn">CLEAR DRAWINGS</button>
-      </div>
-      <div class="toptools" style="margin-top:10px;">
-        <button class="pill" id="runSimBtn">RUN DEMO SIM</button>
-        <button class="pill" id="resetSessionBtn">RESET SESSION</button>
-        <button class="pill" id="homeTrainerBtn">HOME</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Event Log</h3>
-      <div id="eventLog"></div>
-    </div>
-
-    <div class="card">
-      <button class="btn" id="endExerciseBtn">END EXERCISE</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
- integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script type="module">
-import { createSession as sbCreateSession, joinSession as sbJoinSession, listSessionPlayers, listSessionZones, addPlayer as sbAddPlayer, updatePlayerState, createZone as sbCreateZone, updateSessionStatus, logEvent as sbLogEvent, subscribeToSession } from './tuli7_supabase_client_v231.js';
-
-(function () {
-  const API_KEY = "bed0c8b5-f42c-49fe-af0a-52da582dd0aa";
-  const weaponProfiles = {
-    "81mm":  { name:"81mm KRH",  r1:30,  r2:70,  r3:120 },
-    "120mm": { name:"120mm KRH", r1:40,  r2:90,  r3:150 },
-    "122mm": { name:"122mm",     r1:50,  r2:110, r3:180 },
-    "155mm": { name:"155mm",     r1:60,  r2:130, r3:200 },
-    "rocket":{ name:"LIGHT RKT", r1:50,  r2:120, r3:220 }
-  };
-
-  const state = {
-    sessionName: "", sessionPin: "", delay: 5, blue: 0, red: 0, events: [],
-    weapon: "81mm", mode: "arty", map: null, base: null, meMarker: null, meLabel: null,
-    overlays: [], pending: [], drawStart: null, previewRect: null, pendingArea: null,
-    players: [], areaDefs: [], playerWatchId: null, enginePlayer: null, sessionId: null, currentPlayerDbId: null, sessionChannel: null, currentRole: null
-  };
-
-  const q = id => document.getElementById(id);
-
-  function generatePin4(){
-    return String(Math.floor(1000 + Math.random() * 9000));
-  }
-
-  function validPin4(pin){
-    return /^\d{4}$/.test(pin);
-  }
-
-  function show(id){
-    document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
-    q(id).classList.add("active");
-    if (id === "trainerScreen") ensureMap();
-  }
-
-  function syncSessionLabels(){
-    q("createdSessionName").textContent = state.sessionName;
-    q("createdSessionPin").textContent = state.sessionPin;
-    q("trainerSessionName").textContent = state.sessionName;
-    q("trainerSessionPin").textContent = state.sessionPin;
-    q("trainerRoomTitle").textContent = state.sessionName + " / TRAINER";
-    q("playerSessionInfo").textContent = "Session: " + state.sessionName;
-  }
-
-  function mapDbPlayers(players){
-    return (players || []).map(p => ({
-      dbId: p.id,
-      id: p.player_code,
-      side: p.side,
-      status: p.status || 'OK',
-      cause: p.cause || 'NONE'
-    }));
-  }
-
-  async function refreshPlayersFromDb(){
-    if (!state.sessionId) return;
-    const rows = await listSessionPlayers(state.sessionId);
-    state.players = mapDbPlayers(rows);
-    renderRoster();
-  }
-
-  function normalizeZone(row){
-    const g = row.geometry_json || {};
-    if (row.type === 'mines' || row.type === 'cbrn') {
-      if (!g.bounds) return null;
-      return { id: row.id, type: row.type, bounds: L.latLngBounds(g.bounds) };
-    }
-    if (row.type === 'arty') {
-      if (!g.center) return null;
-      return {
-        id: row.id,
-        type: 'arty',
-        center: L.latLng(g.center[0], g.center[1]),
-        r1: g.r1, r2: g.r2, r3: g.r3,
-        expiresAt: row.expires_at ? new Date(row.expires_at).getTime() : null
-      };
-    }
-    return null;
-  }
-
-  async function refreshZonesFromDb(){
-    if (!state.sessionId) return;
-    const rows = await listSessionZones(state.sessionId);
-    state.areaDefs = rows.map(normalizeZone).filter(Boolean);
-  }
-
-  async function ensureSessionSubscription(){
-    if (!state.sessionId) return;
-    if (state.sessionChannel) return;
-
-    await refreshPlayersFromDb();
-    await refreshZonesFromDb();
-
-    state.sessionChannel = subscribeToSession(state.sessionId, {
-      onPlayers: async () => { await refreshPlayersFromDb(); },
-      onZones: async () => { await refreshZonesFromDb(); },
-      onEvents: async () => {},
-      onStatus: () => {}
-    });
-  }
-
-  async function pushZoneToSupabase(zone){
-    if (!state.sessionId) return null;
-    const row = await sbCreateZone(state.sessionId, zone);
-    await refreshZonesFromDb();
-    return row;
-  }
-
-  async function syncCurrentPlayerToDb(){
-    if (!state.currentPlayerDbId) return;
-    try {
-      await updatePlayerState(state.currentPlayerDbId, {
-        status: q("playerStatus").textContent.replace("STATUS: ", ""),
-        cause: q("playerCause").textContent.replace("CAUSE: ", "")
-      });
-    } catch (e) {}
-  }
-
-  function setCause(cause){
-    q("playerCause").textContent = "CAUSE: " + cause;
-    syncCurrentPlayerToDb();
-  }
-
-  async function requestAlerts(){
-    if (!("Notification" in window)) {
-      q("enableAlertsBtn").textContent = "ALERTS UNSUPPORTED";
-      return;
-    }
-    const result = await Notification.requestPermission();
-    q("enableAlertsBtn").textContent = result === "granted" ? "ALERTS ENABLED" : "ALERTS BLOCKED";
-  }
-
-  function sendAlert(title, body, vibe){
-    try {
-      if ("Notification" in window && Notification.permission === "granted") {
-        new Notification(title, { body, vibrate: vibe || [200,100,200], tag: "tuli7-alert" });
-      }
-    } catch (e) {}
-  }
-
-  function setZoneInfo(text){
-    q("playerZoneInfo").textContent = "Zone: " + text;
-  }
-
-  function createEnginePlayer(){
-    const id = q("playerId").textContent.trim() || "PLAYER";
-    state.enginePlayer = {
-      id,
-      lastLatLng: null,
-      lastFixTs: 0,
-      mineDistanceByZone: {},
-      zoneTriggered: {},
-      cbrnInsideByZone: {},
-      cbrnExitCountByZone: {}
-    };
-    setZoneInfo("NONE");
-  }
-
-  function movementForEngine(prev, curr, accuracy){
-    if (!prev || !curr) return 0;
-    let d = prev.distanceTo(curr);
-    if (accuracy > 35) d = d * 0.5;
-    return d >= 4 ? d : 0;
-  }
-
-  function cleanupExpiredAreas(nowTs){
-    state.areaDefs = state.areaDefs.filter(z => {
-      if (z.expiresAt && nowTs > z.expiresAt) return false;
-      return true;
-    });
-  }
-
-  function evaluatePlayerGeofence(latlng, accuracy){
-    if (!state.enginePlayer) createEnginePlayer();
-    const p = state.enginePlayer;
-    const nowTs = Date.now();
-    cleanupExpiredAreas(nowTs);
-
-    const deltaMove = movementForEngine(p.lastLatLng, latlng, accuracy);
-    p.lastLatLng = latlng;
-    p.lastFixTs = nowTs;
-
-    let zoneNames = [];
-    let cbrnActive = false;
-
-    for (const z of state.areaDefs) {
-      if (z.type === "mines") {
-        const inside = z.bounds.contains(latlng);
-        if (inside) {
-          zoneNames.push("MINES");
-          const prevDist = p.mineDistanceByZone[z.id] || 0;
-          const nextDist = prevDist + deltaMove;
-          p.mineDistanceByZone[z.id] = nextDist;
-
-          if (!p.zoneTriggered[z.id] && deltaMove > 0) {
-            const chance = Math.min(0.10 + nextDist * 0.01, 0.30);
-            const roll = Math.random();
-            pushEvent(`ENGINE / MINES / ${p.id} / ${nextDist.toFixed(1)}m / ${chance.toFixed(2)} / ${roll.toFixed(2)}`);
-            if (roll < chance) {
-              p.zoneTriggered[z.id] = true;
-              const severe = Math.random() < 0.20;
-              mineSequence();
-              setPlayerStatus(severe ? "KIA" : "WIA");
-              setCause("MINES");
-              setPlayerBanner(severe ? "KIA" : "WIA");
-              sendAlert("TULI7 ALERT", `STATUS: ${severe ? "KIA" : "WIA"}  CAUSE: MINES`, severe ? [700] : [60,80,180]);
-            }
-          }
-        } else {
-          p.mineDistanceByZone[z.id] = 0;
-        }
-      }
-
-      if (z.type === "cbrn") {
-        const inside = z.bounds.contains(latlng);
-        if (inside) {
-          zoneNames.push("CBRN");
-          cbrnActive = true;
-          p.cbrnInsideByZone[z.id] = true;
-          p.cbrnExitCountByZone[z.id] = 0;
-        } else if (p.cbrnInsideByZone[z.id]) {
-          p.cbrnExitCountByZone[z.id] = (p.cbrnExitCountByZone[z.id] || 0) + 1;
-          if (p.cbrnExitCountByZone[z.id] >= 2) {
-            p.cbrnInsideByZone[z.id] = false;
-          } else {
-            cbrnActive = true;
-            zoneNames.push("CBRN");
-          }
-        }
-      }
-
-      if (z.type === "arty" && z.center) {
-        const d = latlng.distanceTo(z.center);
-        if (d <= z.r3) {
-          zoneNames.push("ARTY");
-          const key = "arty_" + z.id;
-          if (!p.zoneTriggered[key]) {
-            p.zoneTriggered[key] = true;
-            if (d <= z.r1) {
-              setPlayerStatus("KIA");
-              setCause("ARTY");
-              setPlayerBanner("KIA");
-              sendAlert("TULI7 ALERT", "STATUS: KIA  CAUSE: ARTY", [700]);
-            } else if (d <= z.r2) {
-              setPlayerStatus("WIA");
-              setCause("ARTY");
-              setPlayerBanner("WIA");
-              sendAlert("TULI7 ALERT", "STATUS: WIA  CAUSE: ARTY", [280,120,280]);
-            } else {
-              setPlayerStatus("SUP");
-              setCause("ARTY");
-              setPlayerBanner("SUP");
-              sendAlert("TULI7 ALERT", "STATUS: SUP  CAUSE: ARTY", [220,120,220]);
-            }
-          }
-        }
-      }
-    }
-
-    if (cbrnActive) {
-      cbrnLoopStart();
-      if (q("playerStatus").textContent === "STATUS: OK") setPlayerStatus("SUP");
-      if (q("playerCause").textContent === "CAUSE: NONE" || q("playerCause").textContent === "CAUSE: CBRN") setCause("CBRN");
-    } else {
-      stopTest();
-      if (q("playerCause").textContent === "CAUSE: CBRN" && q("playerStatus").textContent === "STATUS: SUP") {
-        setPlayerStatus("OK");
-        setCause("NONE");
-      }
-    }
-
-    setZoneInfo(zoneNames.length ? [...new Set(zoneNames)].join(" + ") : "NONE");
-  }
-
-  function startPlayerGpsWatch(){
-    if (!navigator.geolocation) {
-      q("playerGpsInfo").textContent = "GPS unavailable";
-      return;
-    }
-    if (state.playerWatchId !== null) {
-      q("playerGpsInfo").textContent = "GPS already active";
-      return;
-    }
-    if (!state.enginePlayer) createEnginePlayer();
-    q("playerGpsInfo").textContent = "GPS active";
-    state.playerWatchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
-        q("playerGpsInfo").textContent = "GPS: " + pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5) + " ±" + Math.round(pos.coords.accuracy) + "m";
-        evaluatePlayerGeofence(latlng, pos.coords.accuracy || 999);
-      },
-      () => { q("playerGpsInfo").textContent = "GPS denied"; },
-      { enableHighAccuracy: true, maximumAge: 3000, timeout: 5000 }
-    );
-  }
-
-  function stopPlayerGpsWatch(){
-    if (state.playerWatchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(state.playerWatchId);
-    state.playerWatchId = null;
-    stopTest();
-    q("playerGpsInfo").textContent = "GPS inactive";
-    setZoneInfo("NONE");
-  }
-
-  function playerColor(status){
-    if(status === "OK") return "#86efac";
-    if(status === "SUP") return "#fde68a";
-    if(status === "WIA") return "#fca5a5";
-    if(status === "KIA") return "#cbd5e1";
-    return "#9ca3af";
-  }
-
-  function renderRoster(){
-    const blue = state.players.filter(p => p.side === "BLUE").length;
-    const red = state.players.filter(p => p.side === "RED").length;
-    q("blueCountStat").textContent = "BLUE: " + blue;
-    q("redCountStat").textContent = "RED: " + red;
-    q("totalCountStat").textContent = "TOTAL: " + state.players.length;
-
-    const list = q("rosterList");
-    const more = q("rosterMoreLine");
-    list.innerHTML = "";
-    const visible = state.players.slice(0, 12);
-
-    visible.forEach(p => {
-      const row = document.createElement("div");
-      row.className = "roster-row";
-
-      const left = document.createElement("div");
-      left.className = "roster-left";
-
-      const dot = document.createElement("div");
-      dot.className = "roster-dot";
-      dot.style.background = playerColor(p.status);
-
-      const textWrap = document.createElement("div");
-      textWrap.innerHTML = `<div class="roster-name">${p.id}</div><div class="roster-status">${p.status}</div>`;
-
-      left.appendChild(dot);
-      left.appendChild(textWrap);
-
-      const resetBtn = document.createElement("button");
-      resetBtn.className = "pill";
-      resetBtn.style.padding = "8px 10px";
-      resetBtn.style.fontSize = "14px";
-      resetBtn.textContent = "RESET";
-      resetBtn.onclick = () => {
-        p.status = "OK";
-        if (q("playerId").textContent === p.id){
-          setPlayerStatus("OK");
-          setCause("NONE");
-          setPlayerBanner("READY");
-        }
-        renderRoster();
-      };
-
-      row.appendChild(left);
-      row.appendChild(resetBtn);
-      list.appendChild(row);
-    });
-
-    const remaining = state.players.length - visible.length;
-    more.textContent = remaining > 0 ? "+" + remaining + " more" : "";
-  }
-
-  function updatePlayerStatusRecord(id, status){
-    const p = state.players.find(x => x.id === id);
-    if (p) p.status = status;
-    renderRoster();
-  }
-
-  function highlightStatusButtons(kind){
-    const ids = ["supBtn","wiaBtn","kiaBtn"];
-    ids.forEach(id => q(id).classList.remove("active"));
-    if (kind === "SUP") q("supBtn").classList.add("active");
-    if (kind === "WIA") q("wiaBtn").classList.add("active");
-    if (kind === "KIA") q("kiaBtn").classList.add("active");
-  }
-
-  function setPlayerStatus(kind){
-    const el = q("playerStatus");
-    el.className = "status";
-    if(kind === "OK") el.classList.add("ok");
-    if(kind === "SUP") el.classList.add("sup");
-    if(kind === "WIA") el.classList.add("wia");
-    if(kind === "KIA") el.classList.add("kia");
-    el.textContent = "STATUS: " + kind;
-    highlightStatusButtons(kind);
-    const currentId = q("playerId").textContent.trim();
-    if (currentId) updatePlayerStatusRecord(currentId, kind);
-    syncCurrentPlayerToDb();
-  }
-
-  function setPlayerBanner(text){ q("playerBanner").textContent = text; }
-
-  function pushEvent(text){
-    const t = new Date().toLocaleTimeString("en-GB");
-    state.events.unshift(t + "  " + text);
-    state.events = state.events.slice(0, 14);
-    renderEvents();
-  }
-
-  function renderEvents(){
-    const log = q("eventLog");
-    log.innerHTML = "";
-    state.events.forEach(item => {
-      const div = document.createElement("div");
-      div.className = "event";
-      div.textContent = item;
-      log.appendChild(div);
-    });
-  }
-
-  function vibrate(pattern){ try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {} }
-
-  function beepPack(){
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      [0, 0.18, 0.36].forEach((start) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = 900;
-        gain.gain.value = 0.02;
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + start); osc.stop(ctx.currentTime + start + 0.10);
-      });
-    } catch (e) {}
-  }
-
-  function incomingSequence(){
-    setPlayerBanner("INCOMING");
-    vibrate([140,70,140,70,140]);
-    beepPack();
-    sendAlert("TULI7 ALERT", "INCOMING", [140,70,140,70,140]);
-  }
-  function impactSequence(){
-    vibrate([500,120,250]);
-    setPlayerStatus("SUP");
-    setCause("ARTY");
-    setPlayerBanner("IMPACT");
-    sendAlert("TULI7 ALERT", "STATUS: SUP  CAUSE: ARTY", [500,120,250]);
-    setTimeout(() => setPlayerBanner("READY"), 2200);
-  }
-  function mineSequence(){
-    vibrate([60,80,180]);
-    setPlayerStatus("WIA");
-    setCause("MINES");
-    setPlayerBanner("MINE");
-    sendAlert("TULI7 ALERT", "STATUS: WIA  CAUSE: MINES", [60,80,180]);
-    setTimeout(() => setPlayerBanner("READY"), 2000);
-  }
-
-  let cbrnInterval = null;
-  function cbrnLoopStart(){
-    if (cbrnInterval) return;
-    setPlayerBanner("CBRN AREA");
-    setCause("CBRN");
-    sendAlert("TULI7 ALERT", "CAUSE: CBRN AREA", [80,120,80,200,160]);
-    cbrnInterval = setInterval(() => vibrate([80,120,80,200,160]), 2000);
-    vibrate([80,120,80,200,160]);
-  }
-
-  function stopTest(){
-    if (cbrnInterval) clearInterval(cbrnInterval);
-    cbrnInterval = null;
-    setPlayerBanner("READY");
-  }
-
-  function wmtsUrl(layer){
-    return `https://avoin-karttakuva.maanmittauslaitos.fi/avoin/wmts/1.0.0/${layer}/default/WGS84_Pseudo-Mercator/{z}/{y}/{x}.png?api-key=${API_KEY}`;
-  }
-
-  function setBase(layer){
-    if (!state.map) return;
-    if (state.base) state.map.removeLayer(state.base);
-    state.base = L.tileLayer(wmtsUrl(layer), { attribution: 'MML', maxZoom: 16, minZoom: 0 }).addTo(state.map);
-  }
-
-  function ensureMap(){
-    if (state.map) { setTimeout(() => state.map.invalidateSize(), 50); return; }
-    state.map = L.map('map', { zoomControl:true }).setView([60.1699, 24.9384], 13);
-    setBase('taustakartta');
-
-    state.meMarker = L.circleMarker([60.1699,24.9384], {radius:8, color:'#ffffff', weight:2, fillColor:'#3b82f6', fillOpacity:1}).addTo(state.map);
-    state.meLabel = L.marker([60.1699,24.9384], {
-      icon: L.divIcon({className:'', html:'<div class="you-label">YOU</div>', iconSize:[40,18], iconAnchor:[20,-6]})
-    }).addTo(state.map);
-
-    state.map.on('mousemove', (e) => {
-      if ((state.mode === 'mines' || state.mode === 'cbrn') && state.drawStart && !state.pendingArea) {
-        if (state.previewRect) state.map.removeLayer(state.previewRect);
-        const color = state.mode === 'mines' ? '#a855f7' : '#22d3ee';
-        state.previewRect = L.rectangle(L.latLngBounds(state.drawStart, e.latlng), { color, weight:2, dashArray:'6,6', fillOpacity:0.12 }).addTo(state.map);
-      }
-    });
-
-    state.map.on('click', (e) => {
-      if (state.mode === 'arty') scheduleImpact(e.latlng);
-      else handleAreaClick(e.latlng);
-    });
-  }
-
-  function clearDynamic(){
-    state.pending.forEach(p => { if (p.timer) clearInterval(p.timer); if (p.group) state.map.removeLayer(p.group); });
-    state.pending = [];
-    state.overlays.forEach(o => { if (state.map.hasLayer(o)) state.map.removeLayer(o); });
-    state.overlays = [];
-    state.areaDefs = [];
-    if (state.previewRect && state.map.hasLayer(state.previewRect)) state.map.removeLayer(state.previewRect);
-    state.previewRect = null;
-    if (state.pendingArea && state.map.hasLayer(state.pendingArea.rect)) state.map.removeLayer(state.pendingArea.rect);
-    state.pendingArea = null;
-    state.drawStart = null;
-    updateDrawUI();
-  }
-
-  function addImpact(latlng, weaponKey){
-    const p = weaponProfiles[weaponKey];
-    const outer = L.circle(latlng, {radius:p.r3, color:'#eab308', weight:2, dashArray:'6,6', fillOpacity:0.08});
-    const mid = L.circle(latlng, {radius:p.r2, color:'#f97316', weight:2, fillOpacity:0.08});
-    const inner = L.circle(latlng, {radius:p.r1, color:'#ef4444', weight:2, fillOpacity:0.10});
-    outer.addTo(state.map); mid.addTo(state.map); inner.addTo(state.map);
-    state.overlays.push(outer, mid, inner);
-  }
-
-  function scheduleImpact(latlng){
-    const p = weaponProfiles[state.weapon];
-    incomingSequence();
-
-    const cross = L.marker(latlng, {
-      icon: L.divIcon({
-        className:'',
-        html:`<div style="position:relative;width:28px;height:28px">
-                <div style="position:absolute;left:13px;top:0;width:2px;height:28px;background:#fff"></div>
-                <div style="position:absolute;left:0;top:13px;width:28px;height:2px;background:#fff"></div>
-                <div style="position:absolute;left:4px;top:4px;width:20px;height:20px;border:2px solid #eab308;border-radius:50%"></div>
-              </div>`,
-        iconSize:[28,28], iconAnchor:[14,14]
-      })
-    });
-
-    const label = L.marker(latlng, {
-      icon: L.divIcon({className:'', html:`<div class="target-label">${p.name}</div>`, iconSize:[90,18], iconAnchor:[45,-10]})
-    });
-
-    const countdown = L.marker(latlng, {
-      icon: L.divIcon({className:'', html:`<div class="target-label">${state.delay===0?'NOW':state.delay+'s'}</div>`, iconSize:[54,18], iconAnchor:[27,24]})
-    });
-
-    const group = L.layerGroup([cross, label, countdown]).addTo(state.map);
-    const target = { id: Date.now()+Math.random(), latlng, secondsLeft: state.delay, timer:null, weaponKey:state.weapon, group, countdown };
-    state.pending.push(target);
-
-    pushEvent(`TARGET / ${p.name} / ${state.delay===0?'NOW':state.delay+'s'} / MGRS pending`);
-
-    if (state.delay === 0) {
-      setTimeout(() => {
-        state.map.removeLayer(group);
-        state.pending = state.pending.filter(t => t.id !== target.id);
-        addImpact(latlng, target.weaponKey);
-        const prof = weaponProfiles[target.weaponKey];
-        pushZoneToSupabase({
-          type: 'arty',
-          weapon: target.weaponKey,
-          geometry_json: {
-            center: [latlng.lat, latlng.lng],
-            r1: prof.r1, r2: prof.r2, r3: prof.r3
-          },
-          expires_at: new Date(Date.now() + 10000).toISOString()
-        }).catch(() => {});
-        impactSequence();
-        pushEvent(`IMPACT / ${p.name} / NOW / MGRS pending`);
-      }, 250);
-      return;
-    }
-
-    target.timer = setInterval(() => {
-      target.secondsLeft -= 1;
-      countdown.setIcon(L.divIcon({className:'', html:`<div class="target-label">${target.secondsLeft<=0?'IMPACT':target.secondsLeft+'s'}</div>`, iconSize:[54,18], iconAnchor:[27,24]}));
-      if (target.secondsLeft <= 0) {
-        clearInterval(target.timer);
-        state.map.removeLayer(group);
-        state.pending = state.pending.filter(t => t.id !== target.id);
-        addImpact(latlng, target.weaponKey);
-        const prof = weaponProfiles[target.weaponKey];
-        pushZoneToSupabase({
-          type: 'arty',
-          weapon: target.weaponKey,
-          geometry_json: {
-            center: [latlng.lat, latlng.lng],
-            r1: prof.r1, r2: prof.r2, r3: prof.r3
-          },
-          expires_at: new Date(Date.now() + 10000).toISOString()
-        }).catch(() => {});
-        impactSequence();
-        pushEvent(`IMPACT / ${p.name} / ${state.delay}s / MGRS pending`);
-      }
-    }, 1000);
-  }
-
-  function updateDrawUI(){
-    const show = !!state.pendingArea;
-    q("drawActions").classList.toggle("show", show);
-    q("pendingNote").classList.toggle("show", show);
-  }
-
-  function handleAreaClick(latlng){
-    if (state.pendingArea) return;
-    if (!state.drawStart) {
-      state.drawStart = latlng;
-      pushEvent(`${state.mode.toUpperCase()} / point 1 placed`);
-      return;
-    }
-    if (state.previewRect && state.map.hasLayer(state.previewRect)) {
-      state.map.removeLayer(state.previewRect);
-      state.previewRect = null;
-    }
-    const color = state.mode === 'mines' ? '#a855f7' : '#22d3ee';
-    const bounds = L.latLngBounds(state.drawStart, latlng);
-    const rect = L.rectangle(bounds, { color, weight:2, dashArray:'6,6', fillOpacity:0.16 }).addTo(state.map);
-    state.pendingArea = { mode: state.mode, rect, bounds };
-    state.drawStart = null;
-    updateDrawUI();
-  }
-
-  async function confirmArea(){
-    if (!state.pendingArea) return;
-    state.overlays.push(state.pendingArea.rect);
-    const currentMode = state.pendingArea.mode;
-    const currentBounds = state.pendingArea.bounds;
-    if (currentMode === 'mines') pushEvent("MINES / area confirmed / MGRS pending");
-    else { cbrnLoopStart(); pushEvent("CBRN / area confirmed / MGRS pending"); }
-    try {
-      await pushZoneToSupabase({
-        type: currentMode,
-        geometry_json: {
-          bounds: [
-            [currentBounds.getSouthWest().lat, currentBounds.getSouthWest().lng],
-            [currentBounds.getNorthEast().lat, currentBounds.getNorthEast().lng]
-          ]
-        }
-      });
-    } catch (e) {}
-    state.pendingArea = null;
-    updateDrawUI();
-  }
-
-  function cancelArea(){
-    if (state.pendingArea && state.map.hasLayer(state.pendingArea.rect)) state.map.removeLayer(state.pendingArea.rect);
-    if (state.previewRect && state.map.hasLayer(state.previewRect)) state.map.removeLayer(state.previewRect);
-    state.pendingArea = null;
-    state.previewRect = null;
-    state.drawStart = null;
-    updateDrawUI();
-    pushEvent("Area drawing cancelled");
-  }
-
-  function cancelAreaSilently(){
-    if (state.pendingArea && state.map && state.map.hasLayer(state.pendingArea.rect)) state.map.removeLayer(state.pendingArea.rect);
-    if (state.previewRect && state.map && state.map.hasLayer(state.previewRect)) state.map.removeLayer(state.previewRect);
-    state.pendingArea = null;
-    state.previewRect = null;
-    state.drawStart = null;
-    updateDrawUI();
-  }
-
-  function updateModeUI(){
-    q("modeLabel").textContent = "Mode: " + state.mode.toUpperCase();
-    q("weaponCard").style.display = state.mode === 'arty' ? 'block' : 'none';
-    q("delayCard").style.display = state.mode === 'arty' ? 'block' : 'none';
-  }
-
-  async function endExercise(){
-    clearDynamic();
-    cancelAreaSilently();
-    state.players.forEach(p => p.status = "OK");
-    renderRoster();
-    stopTest();
-    setZoneInfo("NONE");
-    setPlayerStatus("OK");
-    setCause("NONE");
-    setPlayerBanner("EXERCISE ENDED");
-    sendAlert("TULI7", "EXERCISE ENDED", [180,80,180]);
-    pushEvent("EXERCISE ENDED");
-    if (state.sessionId) { try { await updateSessionStatus(state.sessionId, 'ended'); } catch (e) {} }
-    setTimeout(() => setPlayerBanner("READY"), 2500);
-  }
-
-  function resetSession(){
-    stopPlayerGpsWatch();
-    endExercise();
-    state.blue = 0;
-    state.red = 0;
-    state.players = [];
-    state.events = [];
-    renderEvents();
-    renderRoster();
-    pushEvent("SESSION RESET");
-  }
-
-  function initBindings(){
-    q("createFlowBtn").addEventListener("click", () => { q("sessionPinInput").value = ""; show("createSessionScreen"); });
-    q("joinFlowBtn").addEventListener("click", () => show("joinSessionScreen"));
-    q("createBackBtn").addEventListener("click", () => show("home"));
-    q("randomPinBtn").addEventListener("click", () => { q("sessionPinInput").value = generatePin4(); });
-    q("joinBackBtn").addEventListener("click", () => show("home"));
-    q("sideBackBtn").addEventListener("click", () => show("joinSessionScreen"));
-    q("playerDoneBtn").addEventListener("click", () => { stopPlayerGpsWatch(); state.currentPlayerDbId = null; show("home"); });
-    q("homeTrainerBtn").addEventListener("click", () => { stopPlayerGpsWatch(); show("home"); });
-    q("createdBackHomeBtn").addEventListener("click", () => show("home"));
-    q("createdOpenTrainerBtn").addEventListener("click", () => show("trainerScreen"));
-
-    q("createSessionBtn").addEventListener("click", async () => {
-      const name = q("sessionNameInput").value.trim();
-      const pin = q("sessionPinInput").value.trim();
-      if (!name || !pin) return;
-      if (!validPin4(pin)) { alert('PIN must be 4 digits'); return; }
-      try {
-        const row = await sbCreateSession(name, pin);
-        state.sessionId = row.id;
-        state.sessionName = row.session_name;
-        state.sessionPin = row.pin;
-        state.currentRole = 'trainer';
-        syncSessionLabels();
-        await ensureSessionSubscription();
-        await sbLogEvent(state.sessionId, 'session_created', { session_name: state.sessionName });
-        show("sessionCreatedScreen");
-      } catch (e) {
-        alert("Create session failed");
-      }
-    });
-
-    q("joinContinueBtn").addEventListener("click", async () => {
-      const name = q("joinSessionNameInput").value.trim().toUpperCase();
-      const pin = q("joinSessionPinInput").value.trim();
-      if (!name || !pin) { q("joinMsg").textContent = "Enter session name and PIN."; return; }
-      if (!validPin4(pin)) { q("joinMsg").textContent = 'PIN must be 4 digits'; return; }
-      try {
-        const row = await sbJoinSession(name, pin);
-        if (!row) { q("joinMsg").textContent = "Session not found"; return; }
-        state.sessionId = row.id;
-        state.sessionName = row.session_name;
-        state.sessionPin = row.pin;
-        state.currentRole = 'player';
-        syncSessionLabels();
-        await ensureSessionSubscription();
-        q("joinMsg").textContent = "Session OK";
-        show("sideScreen");
-      } catch (e) {
-        q("joinMsg").textContent = "Join failed";
-      }
-    });
-
-    q("blueBtn").addEventListener("click", async () => {
-      try {
-        const existing = await listSessionPlayers(state.sessionId);
-        const next = existing.filter(p => p.side === 'BLUE').length + 1;
-        const id = "BLUE " + next;
-        const row = await sbAddPlayer(state.sessionId, id, 'BLUE');
-        state.currentPlayerDbId = row.id;
-        q("playerId").textContent = id;
-        createEnginePlayer();
-        setPlayerStatus("OK");
-        setCause("NONE");
-        setPlayerBanner("READY");
-        await refreshPlayersFromDb();
-        show("playerScreen");
-      } catch (e) {
-        alert("Add BLUE player failed");
-      }
-    });
-
-    q("redBtn").addEventListener("click", async () => {
-      try {
-        const existing = await listSessionPlayers(state.sessionId);
-        const next = existing.filter(p => p.side === 'RED').length + 1;
-        const id = "RED " + next;
-        const row = await sbAddPlayer(state.sessionId, id, 'RED');
-        state.currentPlayerDbId = row.id;
-        q("playerId").textContent = id;
-        createEnginePlayer();
-        setPlayerStatus("OK");
-        setCause("NONE");
-        setPlayerBanner("READY");
-        await refreshPlayersFromDb();
-        show("playerScreen");
-      } catch (e) {
-        alert("Add RED player failed");
-      }
-    });
-
-    q("supBtn").addEventListener("click", () => { setPlayerStatus("SUP"); setCause("MANUAL"); sendAlert("TULI7 ALERT", "STATUS: SUP  CAUSE: MANUAL", [220,120,220]); });
-    q("wiaBtn").addEventListener("click", () => { setPlayerStatus("WIA"); setCause("MANUAL"); sendAlert("TULI7 ALERT", "STATUS: WIA  CAUSE: MANUAL", [280,120,280]); });
-    q("kiaBtn").addEventListener("click", () => { setPlayerStatus("KIA"); setCause("MANUAL"); sendAlert("TULI7 ALERT", "STATUS: KIA  CAUSE: MANUAL", [700]); });
-    q("resetPlayerBtn").addEventListener("click", () => { setPlayerStatus("OK"); setCause("NONE"); setPlayerBanner("READY"); });
-    q("incomingBtn").addEventListener("click", incomingSequence);
-
-    document.querySelectorAll("[data-delay]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        state.delay = Number(btn.dataset.delay);
-        document.querySelectorAll("[data-delay]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        q("delayLabel").textContent = "Delay: " + (state.delay === 0 ? "NOW" : state.delay + "s");
-      });
-    });
-
-    document.querySelectorAll("[data-weapon]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        state.weapon = btn.dataset.weapon;
-        document.querySelectorAll("[data-weapon]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        q("weaponLabel").textContent = "Selected: " + weaponProfiles[state.weapon].name;
-      });
-    });
-
-    document.querySelectorAll("[data-mode]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        state.mode = btn.dataset.mode;
-        document.querySelectorAll("[data-mode]").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        cancelAreaSilently();
-        updateModeUI();
-      });
-    });
-
-    q("baseTaustaBtn").addEventListener("click", () => setBase('taustakartta'));
-    q("baseMaastoBtn").addEventListener("click", () => setBase('maastokartta'));
-
-    q("runSimBtn").addEventListener("click", () => {
-      clearDynamic();
-      pushEvent("DEMO RESET");
-      const mineBounds = L.latLngBounds([[60.1635,24.924],[60.1600,24.931]]);
-      const mineRect = L.rectangle(mineBounds, { color:'#a855f7', weight:2, dashArray:'6,6', fillOpacity:0.16 }).addTo(state.map);
-      state.overlays.push(mineRect);
-      state.areaDefs.push({ id: Date.now()+Math.random(), type: "mines", bounds: mineBounds });
-      const cbrnBounds = L.latLngBounds([[60.1730,24.948],[60.1690,24.956]]);
-      const cbrnRect = L.rectangle(cbrnBounds, { color:'#22d3ee', weight:2, dashArray:'6,6', fillOpacity:0.16 }).addTo(state.map);
-      state.overlays.push(cbrnRect);
-      state.areaDefs.push({ id: Date.now()+Math.random(), type: "cbrn", bounds: cbrnBounds });
-      state.mode = 'arty';
-      document.querySelectorAll("[data-mode]").forEach(b => b.classList.remove("active"));
-      document.querySelector('[data-mode="arty"]').classList.add("active");
-      updateModeUI();
-
-      const seq = ["81mm","120mm","122mm"];
-      const pts = [[60.1684,24.9342],[60.1716,24.9435],[60.1738,24.9512]];
-      seq.forEach((w,i) => {
-        setTimeout(() => {
-          state.weapon = w;
-          document.querySelectorAll("[data-weapon]").forEach(b => b.classList.remove("active"));
-          document.querySelector(`[data-weapon="${w}"]`).classList.add("active");
-          q("weaponLabel").textContent = "Selected: " + weaponProfiles[state.weapon].name;
-          scheduleImpact(L.latLng(pts[i][0], pts[i][1]));
-        }, i * 800);
-      });
-    });
-
-    q("locBtn").addEventListener("click", () => {
-      if (!navigator.geolocation) { pushEvent("Location unavailable."); return; }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const latlng = [pos.coords.latitude, pos.coords.longitude];
-          state.meMarker.setLatLng(latlng);
-          state.meLabel.setLatLng(latlng);
-          state.map.setView(latlng, Math.max(state.map.getZoom(), 13));
-          pushEvent("Trainer location updated.");
-        },
-        () => pushEvent("Location denied."),
-        { enableHighAccuracy:true, timeout:5000, maximumAge:10000 }
-      );
-    });
-
-    q("clearTargetsBtn").addEventListener("click", () => {
-      clearDynamic();
-      pushEvent("Drawings cleared.");
-    });
-
-    q("drawOkBtn").addEventListener("click", confirmArea);
-    q("drawCancelBtn").addEventListener("click", cancelArea);
-    q("endExerciseBtn").addEventListener("click", endExercise);
-    q("resetSessionBtn").addEventListener("click", resetSession);
-
-    q("rosterToggleBtn").addEventListener("click", () => {
-      const panel = q("rosterPanel");
-      const open = panel.classList.toggle("show");
-      q("rosterToggleBtn").textContent = (open ? "▲" : "▼") + " ROSTER";
-    });
-
-    q("testToggleBtn").addEventListener("click", () => {
-      const panel = q("testPanel");
-      const open = panel.classList.toggle("show");
-      q("testToggleBtn").textContent = (open ? "▲" : "▼") + " TEST ALERTS";
-    });
-
-    q("enableAlertsBtn").addEventListener("click", requestAlerts);
-    q("playerGpsStartBtn").addEventListener("click", startPlayerGpsWatch);
-    q("playerGpsStopBtn").addEventListener("click", stopPlayerGpsWatch);
-    q("testIncomingBtn").addEventListener("click", incomingSequence);
-    q("testImpactBtn").addEventListener("click", impactSequence);
-    q("testMineBtn").addEventListener("click", mineSequence);
-    q("testCbrnBtn").addEventListener("click", cbrnLoopStart);
-    q("testStopBtn").addEventListener("click", stopTest);
-  }
-
-  initBindings();
-  updateModeUI();
-  renderEvents();
-  renderRoster();
-})();
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./tuli7_online_v1_app.js"></script>
 </body>
 </html>
