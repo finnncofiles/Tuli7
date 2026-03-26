@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TULI7 Launch</title>
+  <style>
+    :root{
+      --bg:#070b12; --card:#0f172a; --line:#223147; --text:#f3f4f6; --muted:#9ca3af;
+      --chip:#1e293b; --blue:#2563eb; --btn:#e5e7eb; --btntext:#111827;
+      --ok:#86efac; --sup:#fde68a; --wia:#fca5a5; --kia:#cbd5e1;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+    .screen{display:none;min-height:100vh;padding:18px 14px}
+    .screen.active{display:block}
+    .wrap{width:min(980px,100%);margin:0 auto}
+    h1{font-size:50px;text-align:center;margin:24px 0 14px}
+    h2{font-size:28px;text-align:center;margin:14px 0}
+    h3{font-size:20px;margin:8px 0 12px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0}
+    .btn{width:100%;padding:18px;border:none;border-radius:16px;background:var(--btn);color:var(--btntext);font-size:22px;font-weight:700;margin:8px 0;cursor:pointer}
+    .btn.secondary{background:var(--chip);color:#fff}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .pill{padding:14px 10px;border:none;border-radius:14px;background:var(--chip);color:#fff;font-size:18px;font-weight:700;cursor:pointer}
+    .pill.active{background:var(--blue)}
+    .muted{text-align:center;color:var(--muted)}
+    .smallcenter{text-align:center;font-size:15px;color:#cbd5e1}
+    input{
+      width:100%;padding:16px;font-size:22px;border-radius:14px;border:1px solid var(--line);
+      background:#0b1220;color:#fff;margin:8px 0 14px
+    }
+    .sessiontitle{font-size:26px;font-weight:800;text-align:center;margin-bottom:8px}
+    .idbox{text-align:center;font-size:48px;font-weight:800;margin:18px 0 8px}
+    .banner{text-align:center;padding:12px;border-radius:14px;background:#1f2937;border:1px solid var(--line);font-size:20px;font-weight:700;margin-bottom:12px;color:#dbeafe;}
+    .status{text-align:center;font-size:24px;margin-bottom:12px}
+    .ok{color:var(--ok)} .sup{color:var(--sup)} .wia{color:var(--wia)} .kia{color:var(--kia)}
+    .roster-list{display:grid; gap:8px;}
+    .roster-row{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; background:#0b1220; border:1px solid var(--line); border-radius:12px; padding:10px 12px;}
+    .roster-left{display:flex; align-items:center; gap:10px;}
+    .roster-dot{width:12px; height:12px; border-radius:50%;}
+    .roster-name{font-weight:700;}
+    .roster-status{font-size:14px; color:var(--muted);}
+    .message{margin-top:8px;text-align:center;font-size:16px;min-height:22px;color:#dbeafe}
+    .error{color:#fca5a5}
+    .success{color:#86efac}
+    .statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .stat{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;font-size:15px;color:#dbeafe;font-weight:700}
+    .footer-note{font-size:13px;color:#94a3b8;text-align:center;margin-top:8px}
+    @media (max-width:760px){
+      h1{font-size:42px}
+      .btn{font-size:20px}
+      .row3,.statgrid{grid-template-columns:1fr}
+      .idbox{font-size:42px}
+    }
+  </style>
+</head>
+<body>
+  <div id="home" class="screen active">
+    <div class="wrap">
+      <h1>TULI7</h1>
+      <div class="card">
+        <button class="btn" id="createFlowBtn">CREATE SESSION</button>
+        <button class="btn" id="joinFlowBtn">JOIN SESSION</button>
+        <div class="muted">Trainer creates a session. Players join with session name and PIN.</div>
+      </div>
+      <div class="card">
+        <h3>Launch scope</h3>
+        <div class="muted" style="text-align:left; font-size:15px; line-height:1.45">
+          This launch build focuses on the part that must work first:<br><br>
+          1. Trainer creates a session<br>
+          2. Players join with session name and PIN<br>
+          3. Trainer sees live roster<br>
+          4. Players can set their own status<br><br>
+          Map effects and geofence logic can be added on top after session flow is stable.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="createSessionScreen" class="screen">
+    <div class="wrap">
+      <h2>Create Session</h2>
+      <div class="card">
+        <input id="sessionNameInput" placeholder="Session name, e.g. FIRE7" maxlength="20" />
+        <input id="sessionPinInput" type="password" inputmode="numeric" placeholder="PIN, e.g. 1234" maxlength="8" />
+        <div class="row2">
+          <button class="btn secondary" id="createBackBtn">BACK</button>
+          <button class="btn" id="createSessionBtn">CREATE</button>
+        </div>
+        <div class="message" id="createMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sessionCreatedScreen" class="screen">
+    <div class="wrap">
+      <h2>Session Created</h2>
+      <div class="card">
+        <div class="sessiontitle" id="createdSessionName">FIRE7</div>
+        <div class="smallcenter">PIN</div>
+        <div class="idbox" id="createdSessionPin">1234</div>
+        <div class="smallcenter">Share this session name and PIN with players.</div>
+        <div class="row2">
+          <button class="btn secondary" id="createdBackHomeBtn">HOME</button>
+          <button class="btn" id="createdOpenTrainerBtn">OPEN TRAINER</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="joinSessionScreen" class="screen">
+    <div class="wrap">
+      <h2>Join Session</h2>
+      <div class="card">
+        <input id="joinSessionNameInput" placeholder="Session name" maxlength="20" />
+        <input id="joinSessionPinInput" type="password" inputmode="numeric" placeholder="PIN" maxlength="8" />
+        <div class="row2">
+          <button class="btn secondary" id="joinBackBtn">BACK</button>
+          <button class="btn" id="joinContinueBtn">CONTINUE</button>
+        </div>
+        <div class="message" id="joinMsg">Enter session name and PIN.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sideScreen" class="screen">
+    <div class="wrap">
+      <h2>Select Side</h2>
+      <div class="card">
+        <div class="row2">
+          <button class="btn" id="blueBtn">BLUE</button>
+          <button class="btn" id="redBtn">RED</button>
+        </div>
+        <button class="btn secondary" id="sideBackBtn">BACK</button>
+        <div class="message" id="sideMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="playerScreen" class="screen">
+    <div class="wrap">
+      <h2>Player View</h2>
+      <div class="card">
+        <div id="playerBanner" class="banner">READY</div>
+        <div id="playerSessionInfo" class="smallcenter" style="margin-bottom:8px">Session: FIRE7</div>
+        <div id="playerId" class="idbox">BLUE 1</div>
+        <div id="playerStatus" class="status ok">STATUS: OK</div>
+        <div id="playerRoleInfo" class="smallcenter" style="margin-bottom:12px">Connected to live session</div>
+        <div class="row2">
+          <button class="pill" id="refreshPlayerBtn">REFRESH</button>
+          <button class="pill" id="resetPlayerBtn">RESET</button>
+        </div>
+        <div class="row3" style="margin-top:10px;">
+          <button class="pill" id="supBtn">SUP</button>
+          <button class="pill" id="wiaBtn">WIA</button>
+          <button class="pill" id="kiaBtn">KIA</button>
+        </div>
+        <button class="btn secondary" id="playerDoneBtn">HOME</button>
+        <div class="message" id="playerMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="trainerScreen" class="screen">
+    <div class="wrap">
+      <h2 id="trainerRoomTitle">FIRE7 / TRAINER</h2>
+      <div class="card">
+        <div class="smallcenter">Active session</div>
+        <div class="sessiontitle" id="trainerSessionName">FIRE7</div>
+        <div class="smallcenter">PIN</div>
+        <div class="idbox" id="trainerSessionPin">1234</div>
+      </div>
+      <div class="card">
+        <div class="statgrid">
+          <div class="stat" id="blueCountStat">BLUE: 0</div>
+          <div class="stat" id="redCountStat">RED: 0</div>
+          <div class="stat" id="totalCountStat">TOTAL: 0</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Live roster</h3>
+        <div class="roster-list" id="rosterList"></div>
+        <div class="footer-note">Auto-refresh every 3 seconds while trainer view is open.</div>
+        <div class="row2" style="margin-top:10px;">
+          <button class="btn secondary" id="refreshTrainerBtn">REFRESH NOW</button>
+          <button class="btn" id="endSessionBtn">END SESSION</button>
+        </div>
+        <button class="btn secondary" id="homeTrainerBtn">HOME</button>
+        <div class="message" id="trainerMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
