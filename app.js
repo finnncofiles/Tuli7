@@ -1,341 +1,612 @@
-(() => {
-  const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
-  const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+const SUPABASE_URL = "https://fczmfxhgrpdljgtvpihl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_g4QxKz3RxiCx_a3GgH75wg_XnduFosO";
 
-  const q = (id) => document.getElementById(id);
+(function () {
+  "use strict";
+
+  if (!window.supabase) {
+    window.addEventListener("DOMContentLoaded", () => {
+      alert("Supabase library missing. Add <script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script> before app.js");
+    });
+    return;
+  }
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const STORAGE_KEY = "tuli7_launch_state_v1";
+
   const state = {
-    supabase: null,
+    deviceId: getOrCreateDeviceId(),
+    currentScreen: "home",
+    sessionId: null,
     sessionName: "",
     sessionPin: "",
-    sessionId: null,
-    trainerDeviceId: null,
+    role: null,
+    side: null,
     playerId: null,
     playerCallsign: "",
-    playerSide: "",
-    trainerPoll: null,
-    playerPoll: null,
+    playerStatus: "OK",
+    trainerChannel: null,
+    playerChannel: null,
   };
 
-  function ensureSupabase() {
-    if (!window.supabase) throw new Error("Supabase library missing");
-    if (SUPABASE_URL.includes("PASTE_YOUR") || SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
-      throw new Error("Set SUPABASE_URL and SUPABASE_ANON_KEY in app.js before publishing.");
-    }
-    if (!state.supabase) {
-      state.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-    }
-    return state.supabase;
-  }
+  const q = (id) => document.getElementById(id);
+  const qa = (selector) => Array.from(document.querySelectorAll(selector));
 
-  function show(screenId) {
-    document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
-    q(screenId).classList.add("active");
-    if (screenId !== "trainerScreen") stopTrainerPolling();
-    if (screenId !== "playerScreen") stopPlayerPolling();
-  }
-
-  function getDeviceId(role) {
-    const key = `tuli7_${role}_device_id`;
+  function getOrCreateDeviceId() {
+    const key = "tuli7_device_id";
     let id = localStorage.getItem(key);
     if (!id) {
-      id = crypto.randomUUID();
+      id = "dev_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now().toString(36);
       localStorage.setItem(key, id);
     }
     return id;
   }
 
-  function setMessage(id, text, type = "") {
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      sessionId: state.sessionId,
+      sessionName: state.sessionName,
+      sessionPin: state.sessionPin,
+      role: state.role,
+      side: state.side,
+      playerId: state.playerId,
+      playerCallsign: state.playerCallsign,
+      playerStatus: state.playerStatus,
+    }));
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      state.sessionId = parsed.sessionId || null;
+      state.sessionName = parsed.sessionName || "";
+      state.sessionPin = parsed.sessionPin || "";
+      state.role = parsed.role || null;
+      state.side = parsed.side || null;
+      state.playerId = parsed.playerId || null;
+      state.playerCallsign = parsed.playerCallsign || "";
+      state.playerStatus = parsed.playerStatus || "OK";
+    } catch (err) {
+      console.error("State load failed", err);
+    }
+  }
+
+  function clearState() {
+    state.sessionId = null;
+    state.sessionName = "";
+    state.sessionPin = "";
+    state.role = null;
+    state.side = null;
+    state.playerId = null;
+    state.playerCallsign = "";
+    state.playerStatus = "OK";
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function show(screenId) {
+    qa(".screen").forEach((el) => el.classList.remove("active"));
+    const screen = q(screenId);
+    if (screen) screen.classList.add("active");
+    state.currentScreen = screenId;
+  }
+
+  function setText(id, value) {
     const el = q(id);
-    el.textContent = text || "";
-    el.className = `message ${type}`.trim();
+    if (el) el.textContent = value;
   }
 
-  function sanitizeSessionName(value) {
-    return value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 20);
+  function setJoinMessage(msg, isError = false) {
+    const el = q("joinMsg");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = isError ? "#fca5a5" : "";
   }
 
-  function sanitizePin(value) {
-    return value.trim().replace(/[^0-9]/g, "").slice(0, 8);
+  function setCreateMessage(msg, isError = false) {
+    let el = q("createMsg");
+    if (!el) {
+      const card = document.querySelector("#createSessionScreen .card");
+      if (!card) return;
+      el = document.createElement("div");
+      el.id = "createMsg";
+      el.className = "muted";
+      el.style.marginTop = "10px";
+      card.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.color = isError ? "#fca5a5" : "";
   }
 
-  function syncSessionLabels() {
-    q("createdSessionName").textContent = state.sessionName;
-    q("createdSessionPin").textContent = state.sessionPin;
-    q("trainerSessionName").textContent = state.sessionName;
-    q("trainerSessionPin").textContent = state.sessionPin;
-    q("trainerRoomTitle").textContent = `${state.sessionName} / TRAINER`;
-    q("playerSessionInfo").textContent = `Session: ${state.sessionName}`;
+  function normalizeSessionName(value) {
+    return String(value || "").trim().toUpperCase();
   }
 
-  function playerColor(status) {
-    if (status === "OK") return "#86efac";
-    if (status === "SUP") return "#fde68a";
-    if (status === "WIA") return "#fca5a5";
-    if (status === "KIA") return "#cbd5e1";
-    return "#9ca3af";
+  function normalizePin(value) {
+    return String(value || "").trim();
   }
 
-  function renderRoster(players) {
-    const blue = players.filter((p) => p.side === "BLUE").length;
-    const red = players.filter((p) => p.side === "RED").length;
-    q("blueCountStat").textContent = `BLUE: ${blue}`;
-    q("redCountStat").textContent = `RED: ${red}`;
-    q("totalCountStat").textContent = `TOTAL: ${players.length}`;
+  function sessionLabelsSync() {
+    setText("createdSessionName", state.sessionName);
+    setText("createdSessionPin", state.sessionPin);
+    setText("trainerSessionName", state.sessionName);
+    setText("trainerSessionPin", state.sessionPin);
+    setText("trainerRoomTitle", `${state.sessionName} / TRAINER`);
+    setText("playerSessionInfo", `Session: ${state.sessionName}`);
+  }
 
-    const list = q("rosterList");
-    list.innerHTML = "";
+  function updatePlayerView() {
+    setText("playerId", state.playerCallsign || "PLAYER");
+    setText("playerStatus", `STATUS: ${state.playerStatus}`);
+
+    const statusEl = q("playerStatus");
+    if (statusEl) {
+      statusEl.classList.remove("ok", "sup", "wia", "kia");
+      const cls = state.playerStatus.toLowerCase();
+      if (["ok", "sup", "wia", "kia"].includes(cls)) statusEl.classList.add(cls);
+    }
+
+    const banner = q("playerBanner");
+    if (banner) banner.textContent = state.playerStatus === "OK" ? "READY" : state.playerStatus;
+  }
+
+  function rosterStatusColor(status) {
+    switch (status) {
+      case "OK": return "#86efac";
+      case "SUP": return "#fde68a";
+      case "WIA": return "#fca5a5";
+      case "KIA": return "#cbd5e1";
+      default: return "#94a3b8";
+    }
+  }
+
+  async function fetchRoster() {
+    if (!state.sessionId) return [];
+
+    const { data, error } = await supabase
+      .from("tuli7_players")
+      .select("id, side, callsign, status, player_number")
+      .eq("session_id", state.sessionId)
+      .order("side", { ascending: true })
+      .order("player_number", { ascending: true });
+
+    if (error) {
+      console.error("Roster fetch failed", error);
+      return [];
+    }
+    return data || [];
+  }
+
+  async function renderRoster() {
+    const players = await fetchRoster();
+
+    const blueCount = players.filter((p) => p.side === "BLUE").length;
+    const redCount = players.filter((p) => p.side === "RED").length;
+
+    setText("blueCountStat", `BLUE: ${blueCount}`);
+    setText("redCountStat", `RED: ${redCount}`);
+    setText("totalCountStat", `TOTAL: ${players.length}`);
+
+    const rosterList = q("rosterList");
+    if (!rosterList) return;
+
     if (!players.length) {
-      const empty = document.createElement("div");
-      empty.className = "muted";
-      empty.textContent = "No players joined yet.";
-      list.appendChild(empty);
+      rosterList.innerHTML = `<div class="muted">No players yet.</div>`;
+      setText("rosterMoreLine", "");
       return;
     }
 
-    players.forEach((p) => {
-      const row = document.createElement("div");
-      row.className = "roster-row";
+    rosterList.innerHTML = players.map((p) => {
+      const dotColor = rosterStatusColor(p.status);
+      return `
+        <div class="roster-row">
+          <div class="roster-left">
+            <div class="roster-dot" style="background:${dotColor}"></div>
+            <div>
+              <div class="roster-name">${escapeHtml(p.callsign)}</div>
+              <div class="roster-status">${escapeHtml(p.side)} / ${escapeHtml(p.status)}</div>
+            </div>
+          </div>
+          <div class="roster-status">${escapeHtml(String(p.player_number))}</div>
+        </div>
+      `;
+    }).join("");
 
-      const left = document.createElement("div");
-      left.className = "roster-left";
-
-      const dot = document.createElement("div");
-      dot.className = "roster-dot";
-      dot.style.background = playerColor(p.status);
-
-      const textWrap = document.createElement("div");
-      textWrap.innerHTML = `<div class="roster-name">${p.callsign}</div><div class="roster-status">${p.side} · ${p.status}</div>`;
-
-      const updated = document.createElement("div");
-      updated.className = "roster-status";
-      updated.textContent = new Date(p.updated_at).toLocaleTimeString("fi-FI", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-
-      left.appendChild(dot);
-      left.appendChild(textWrap);
-      row.appendChild(left);
-      row.appendChild(updated);
-      list.appendChild(row);
-    });
+    setText("rosterMoreLine", `${players.length} player(s) connected`);
   }
 
-  function setPlayerStatusUI(status) {
-    const el = q("playerStatus");
-    el.className = "status";
-    const map = { OK: "ok", SUP: "sup", WIA: "wia", KIA: "kia" };
-    el.classList.add(map[status] || "ok");
-    el.textContent = `STATUS: ${status}`;
-
-    ["supBtn", "wiaBtn", "kiaBtn"].forEach((id) => q(id).classList.remove("active"));
-    if (status === "SUP") q("supBtn").classList.add("active");
-    if (status === "WIA") q("wiaBtn").classList.add("active");
-    if (status === "KIA") q("kiaBtn").classList.add("active");
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
   async function createSession() {
-    try {
-      ensureSupabase();
-      setMessage("createMsg", "Creating session...");
-      const name = sanitizeSessionName(q("sessionNameInput").value);
-      const pin = sanitizePin(q("sessionPinInput").value);
-      if (!name || !pin || pin.length < 4) {
-        setMessage("createMsg", "Use session name and at least 4 digit PIN.", "error");
-        return;
-      }
+    const sessionName = normalizeSessionName(q("sessionNameInput")?.value);
+    const pin = normalizePin(q("sessionPinInput")?.value);
 
-      const trainerDeviceId = getDeviceId("trainer");
-      const { data, error } = await state.supabase.rpc("tuli7_create_session", {
-        p_session_name: name,
-        p_pin: pin,
-        p_trainer_device_id: trainerDeviceId,
-      });
-      if (error) throw error;
-
-      const created = Array.isArray(data) ? data[0] : data;
-      state.sessionName = created.session_name;
-      state.sessionPin = pin;
-      state.sessionId = created.session_id;
-      state.trainerDeviceId = trainerDeviceId;
-      syncSessionLabels();
-      setMessage("createMsg", "Session created.", "success");
-      show("sessionCreatedScreen");
-    } catch (err) {
-      setMessage("createMsg", err.message || "Failed to create session.", "error");
+    if (!sessionName) {
+      setCreateMessage("Session name required.", true);
+      return;
     }
-  }
-
-  async function verifyJoin() {
-    try {
-      ensureSupabase();
-      setMessage("joinMsg", "Checking session...");
-      const name = sanitizeSessionName(q("joinSessionNameInput").value);
-      const pin = sanitizePin(q("joinSessionPinInput").value);
-      if (!name || !pin) {
-        setMessage("joinMsg", "Enter session name and PIN.", "error");
-        return;
-      }
-
-      const { data, error } = await state.supabase.rpc("tuli7_verify_session", {
-        p_session_name: name,
-        p_pin: pin,
-      });
-      if (error) throw error;
-      const row = Array.isArray(data) ? data[0] : data;
-      if (!row || !row.ok) throw new Error("Session not found or PIN incorrect.");
-
-      state.sessionName = name;
-      state.sessionPin = pin;
-      state.sessionId = row.session_id;
-      syncSessionLabels();
-      setMessage("joinMsg", "Session OK.", "success");
-      show("sideScreen");
-    } catch (err) {
-      setMessage("joinMsg", err.message || "Join failed.", "error");
+    if (pin.length < 4) {
+      setCreateMessage("PIN must be at least 4 digits.", true);
+      return;
     }
-  }
 
-  async function joinSide(side) {
-    try {
-      ensureSupabase();
-      setMessage("sideMsg", `Joining ${side}...`);
-      const deviceId = getDeviceId("player");
-      const { data, error } = await state.supabase.rpc("tuli7_join_session", {
-        p_session_name: state.sessionName,
-        p_pin: state.sessionPin,
-        p_side: side,
-        p_device_id: deviceId,
-      });
-      if (error) throw error;
+    setCreateMessage("Creating session...");
 
-      const joined = Array.isArray(data) ? data[0] : data;
-      state.playerId = joined.player_id;
-      state.playerCallsign = joined.callsign;
-      state.playerSide = joined.side;
-      q("playerId").textContent = joined.callsign;
-      q("playerBanner").textContent = "READY";
-      setPlayerStatusUI(joined.status || "OK");
-      setMessage("playerMsg", "Connected.", "success");
-      show("playerScreen");
-      startPlayerPolling();
-    } catch (err) {
-      setMessage("sideMsg", err.message || "Failed to join side.", "error");
+    const { data, error } = await supabase.rpc("tuli7_create_session", {
+      p_session_name: sessionName,
+      p_pin: pin,
+      p_trainer_device_id: state.deviceId,
+    });
+
+    if (error) {
+      console.error(error);
+      setCreateMessage(error.message || "Create failed.", true);
+      return;
     }
+
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row?.session_id) {
+      setCreateMessage("Session creation failed.", true);
+      return;
+    }
+
+    state.sessionId = row.session_id;
+    state.sessionName = row.session_name;
+    state.sessionPin = pin;
+    state.role = "trainer";
+    state.side = null;
+    state.playerId = null;
+    state.playerCallsign = "";
+    state.playerStatus = "OK";
+    saveState();
+
+    sessionLabelsSync();
+    show("sessionCreatedScreen");
   }
 
-  async function loadTrainerRoster() {
-    if (!state.sessionId) return;
-    const { data, error } = await state.supabase
-      .from("tuli7_players")
-      .select("id,callsign,side,status,updated_at")
-      .eq("session_id", state.sessionId)
-      .order("callsign", { ascending: true });
-    if (error) throw error;
-    renderRoster(data || []);
+  async function verifySession() {
+    const sessionName = normalizeSessionName(q("joinSessionNameInput")?.value);
+    const pin = normalizePin(q("joinSessionPinInput")?.value);
+
+    if (!sessionName || !pin) {
+      setJoinMessage("Enter session name and PIN.", true);
+      return;
+    }
+
+    setJoinMessage("Checking session...");
+
+    const { data, error } = await supabase.rpc("tuli7_verify_session", {
+      p_session_name: sessionName,
+      p_pin: pin,
+    });
+
+    if (error) {
+      console.error(error);
+      setJoinMessage(error.message || "Session check failed.", true);
+      return;
+    }
+
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row?.ok || !row?.session_id) {
+      setJoinMessage("Session or PIN incorrect.", true);
+      return;
+    }
+
+    state.sessionId = row.session_id;
+    state.sessionName = sessionName;
+    state.sessionPin = pin;
+    state.role = "player";
+    saveState();
+
+    sessionLabelsSync();
+    setJoinMessage("Session found.");
+    show("sideScreen");
   }
 
-  function startTrainerPolling() {
-    stopTrainerPolling();
-    loadTrainerRoster().catch((err) => setMessage("trainerMsg", err.message || "Roster refresh failed.", "error"));
-    state.trainerPoll = setInterval(() => {
-      loadTrainerRoster().catch(() => {});
-    }, 3000);
+  async function joinSession(side) {
+    if (!state.sessionName || !state.sessionPin) {
+      setJoinMessage("Missing session data.", true);
+      show("joinSessionScreen");
+      return;
+    }
+
+    const { data, error } = await supabase.rpc("tuli7_join_session", {
+      p_session_name: state.sessionName,
+      p_pin: state.sessionPin,
+      p_side: side,
+      p_device_id: state.deviceId,
+    });
+
+    if (error) {
+      console.error(error);
+      setJoinMessage(error.message || "Join failed.", true);
+      show("joinSessionScreen");
+      return;
+    }
+
+    const row = Array.isArray(data) ? data[0] : null;
+    if (!row?.player_id) {
+      setJoinMessage("Join failed.", true);
+      show("joinSessionScreen");
+      return;
+    }
+
+    state.role = "player";
+    state.side = row.side;
+    state.playerId = row.player_id;
+    state.playerCallsign = row.callsign;
+    state.playerStatus = row.status || "OK";
+    saveState();
+
+    sessionLabelsSync();
+    updatePlayerView();
+    show("playerScreen");
+    subscribePlayerRealtime();
   }
 
-  function stopTrainerPolling() {
-    if (state.trainerPoll) clearInterval(state.trainerPoll);
-    state.trainerPoll = null;
-  }
-
-  async function refreshPlayer() {
+  async function setPlayerStatus(status) {
     if (!state.playerId) return;
-    const { data, error } = await state.supabase
+
+    const { error } = await supabase
       .from("tuli7_players")
-      .select("id,callsign,side,status,updated_at")
-      .eq("id", state.playerId)
-      .single();
-    if (error) throw error;
-    q("playerId").textContent = data.callsign;
-    setPlayerStatusUI(data.status);
-    q("playerRoleInfo").textContent = `${data.side} · synced ${new Date(data.updated_at).toLocaleTimeString("fi-FI")}`;
+      .update({ status })
+      .eq("id", state.playerId);
+
+    if (error) {
+      console.error("Status update failed", error);
+      return;
+    }
+
+    state.playerStatus = status;
+    saveState();
+    updatePlayerView();
   }
 
-  function startPlayerPolling() {
-    stopPlayerPolling();
-    refreshPlayer().catch((err) => setMessage("playerMsg", err.message || "Player refresh failed.", "error"));
-    state.playerPoll = setInterval(() => {
-      refreshPlayer().catch(() => {});
-    }, 4000);
+  async function resetPlayerStatus() {
+    await setPlayerStatus("OK");
   }
 
-  function stopPlayerPolling() {
-    if (state.playerPoll) clearInterval(state.playerPoll);
-    state.playerPoll = null;
+  async function endExercise() {
+    if (!state.sessionId) return;
+    if (!window.confirm("End exercise?")) return;
+
+    const { error } = await supabase
+      .from("tuli7_sessions")
+      .update({ status: "ended" })
+      .eq("id", state.sessionId);
+
+    if (error) {
+      console.error(error);
+      alert("Could not end exercise.");
+      return;
+    }
+
+    teardownRealtime();
+    clearState();
+    show("home");
   }
 
-  async function updatePlayerStatus(status) {
-    try {
-      ensureSupabase();
-      const { error } = await state.supabase
-        .from("tuli7_players")
-        .update({ status, updated_at: new Date().toISOString() })
-        .eq("id", state.playerId);
-      if (error) throw error;
-      q("playerBanner").textContent = status === "OK" ? "READY" : status;
-      setPlayerStatusUI(status);
-      setMessage("playerMsg", `Status updated to ${status}.`, "success");
-    } catch (err) {
-      setMessage("playerMsg", err.message || "Status update failed.", "error");
+  async function resetSessionStatuses() {
+    if (!state.sessionId) return;
+    if (!window.confirm("Reset all player statuses to OK?")) return;
+
+    const { error } = await supabase
+      .from("tuli7_players")
+      .update({ status: "OK" })
+      .eq("session_id", state.sessionId);
+
+    if (error) {
+      console.error(error);
+      alert("Reset failed.");
+      return;
+    }
+
+    renderRoster();
+  }
+
+  function subscribeTrainerRealtime() {
+    unsubscribeTrainerRealtime();
+    if (!state.sessionId) return;
+
+    state.trainerChannel = supabase
+      .channel(`tuli7-trainer-${state.sessionId}`)
+      .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "tuli7_players",
+          filter: `session_id=eq.${state.sessionId}`,
+        }, async () => {
+          await renderRoster();
+        })
+      .on("postgres_changes", {
+          event: "UPDATE",
+          schema: "public",
+          table: "tuli7_sessions",
+          filter: `id=eq.${state.sessionId}`,
+        }, (payload) => {
+          if (payload.new?.status === "ended") {
+            teardownRealtime();
+            alert("Exercise ended.");
+            clearState();
+            show("home");
+          }
+        })
+      .subscribe(async () => {
+        await renderRoster();
+      });
+  }
+
+  function subscribePlayerRealtime() {
+    unsubscribePlayerRealtime();
+    if (!state.playerId || !state.sessionId) return;
+
+    state.playerChannel = supabase
+      .channel(`tuli7-player-${state.playerId}`)
+      .on("postgres_changes", {
+          event: "UPDATE",
+          schema: "public",
+          table: "tuli7_players",
+          filter: `id=eq.${state.playerId}`,
+        }, (payload) => {
+          const nextStatus = payload.new?.status || "OK";
+          state.playerStatus = nextStatus;
+          saveState();
+          updatePlayerView();
+        })
+      .on("postgres_changes", {
+          event: "UPDATE",
+          schema: "public",
+          table: "tuli7_sessions",
+          filter: `id=eq.${state.sessionId}`,
+        }, (payload) => {
+          if (payload.new?.status === "ended") {
+            teardownRealtime();
+            alert("Exercise ended.");
+            clearState();
+            show("home");
+          }
+        })
+      .subscribe();
+  }
+
+  function unsubscribeTrainerRealtime() {
+    if (state.trainerChannel) {
+      supabase.removeChannel(state.trainerChannel);
+      state.trainerChannel = null;
     }
   }
 
-  async function endSession() {
-    try {
-      ensureSupabase();
-      if (!state.sessionId) return;
-      const { error } = await state.supabase
-        .from("tuli7_sessions")
-        .update({ status: "ended", updated_at: new Date().toISOString() })
-        .eq("id", state.sessionId);
-      if (error) throw error;
-      setMessage("trainerMsg", "Session ended.", "success");
-      stopTrainerPolling();
+  function unsubscribePlayerRealtime() {
+    if (state.playerChannel) {
+      supabase.removeChannel(state.playerChannel);
+      state.playerChannel = null;
+    }
+  }
+
+  function teardownRealtime() {
+    unsubscribeTrainerRealtime();
+    unsubscribePlayerRealtime();
+  }
+
+  function bindButton(id, handler) {
+    const el = q(id);
+    if (el) el.addEventListener("click", handler);
+  }
+
+  function bindUi() {
+    bindButton("createFlowBtn", () => {
+      setCreateMessage("");
+      show("createSessionScreen");
+    });
+
+    bindButton("joinFlowBtn", () => {
+      setJoinMessage("Enter session name and PIN.");
+      show("joinSessionScreen");
+    });
+
+    bindButton("createBackBtn", () => show("home"));
+    bindButton("joinBackBtn", () => show("home"));
+    bindButton("sideBackBtn", () => show("joinSessionScreen"));
+
+    bindButton("createSessionBtn", createSession);
+    bindButton("joinContinueBtn", verifySession);
+    bindButton("blueBtn", () => joinSession("BLUE"));
+    bindButton("redBtn", () => joinSession("RED"));
+
+    bindButton("createdBackHomeBtn", () => show("home"));
+
+    bindButton("createdOpenTrainerBtn", async () => {
+      sessionLabelsSync();
+      show("trainerScreen");
+      await renderRoster();
+      subscribeTrainerRealtime();
+    });
+
+    bindButton("playerDoneBtn", () => {
+      teardownRealtime();
       show("home");
-    } catch (err) {
-      setMessage("trainerMsg", err.message || "Failed to end session.", "error");
+    });
+
+    bindButton("homeTrainerBtn", () => {
+      teardownRealtime();
+      show("home");
+    });
+
+    bindButton("supBtn", () => setPlayerStatus("SUP"));
+    bindButton("wiaBtn", () => setPlayerStatus("WIA"));
+    bindButton("kiaBtn", () => setPlayerStatus("KIA"));
+    bindButton("resetPlayerBtn", resetPlayerStatus);
+    bindButton("resetSessionBtn", resetSessionStatuses);
+    bindButton("endExerciseBtn", endExercise);
+
+    bindButton("rosterToggleBtn", () => {
+      const panel = q("rosterPanel");
+      const btn = q("rosterToggleBtn");
+      if (!panel || !btn) return;
+      const isOpen = panel.classList.toggle("show");
+      btn.textContent = isOpen ? "▲ ROSTER" : "▼ ROSTER";
+    });
+
+    bindButton("testToggleBtn", () => {
+      const panel = q("testPanel");
+      const btn = q("testToggleBtn");
+      if (!panel || !btn) return;
+      const isOpen = panel.classList.toggle("show");
+      btn.textContent = isOpen ? "▲ TEST ALERTS" : "▼ TEST ALERTS";
+    });
+
+    bindButton("enableAlertsBtn", async () => {
+      if (!("Notification" in window)) {
+        alert("Notifications not supported on this device/browser.");
+        return;
+      }
+      const result = await Notification.requestPermission();
+      const el = q("enableAlertsBtn");
+      if (el) el.textContent = result === "granted" ? "ALERTS ENABLED" : "ALERTS BLOCKED";
+    });
+  }
+
+  async function restoreSession() {
+    loadState();
+
+    if (!state.sessionId || !state.role) {
+      show("home");
+      return;
     }
+
+    sessionLabelsSync();
+
+    if (state.role === "trainer") {
+      show("trainerScreen");
+      await renderRoster();
+      subscribeTrainerRealtime();
+      return;
+    }
+
+    if (state.role === "player") {
+      updatePlayerView();
+      show("playerScreen");
+      subscribePlayerRealtime();
+      return;
+    }
+
+    show("home");
   }
 
-  function openTrainer() {
-    syncSessionLabels();
-    show("trainerScreen");
-    startTrainerPolling();
-  }
+  window.addEventListener("beforeunload", () => {
+    teardownRealtime();
+  });
 
-  function bind() {
-    q("createFlowBtn").addEventListener("click", () => show("createSessionScreen"));
-    q("joinFlowBtn").addEventListener("click", () => show("joinSessionScreen"));
-    q("createBackBtn").addEventListener("click", () => show("home"));
-    q("joinBackBtn").addEventListener("click", () => show("home"));
-    q("sideBackBtn").addEventListener("click", () => show("joinSessionScreen"));
-    q("createdBackHomeBtn").addEventListener("click", () => show("home"));
-    q("createdOpenTrainerBtn").addEventListener("click", openTrainer);
-    q("homeTrainerBtn").addEventListener("click", () => show("home"));
-    q("playerDoneBtn").addEventListener("click", () => show("home"));
-
-    q("createSessionBtn").addEventListener("click", createSession);
-    q("joinContinueBtn").addEventListener("click", verifyJoin);
-    q("blueBtn").addEventListener("click", () => joinSide("BLUE"));
-    q("redBtn").addEventListener("click", () => joinSide("RED"));
-
-    q("supBtn").addEventListener("click", () => updatePlayerStatus("SUP"));
-    q("wiaBtn").addEventListener("click", () => updatePlayerStatus("WIA"));
-    q("kiaBtn").addEventListener("click", () => updatePlayerStatus("KIA"));
-    q("resetPlayerBtn").addEventListener("click", () => updatePlayerStatus("OK"));
-    q("refreshPlayerBtn").addEventListener("click", () => refreshPlayer().catch((err) => setMessage("playerMsg", err.message || "Refresh failed.", "error")));
-    q("refreshTrainerBtn").addEventListener("click", () => loadTrainerRoster().then(() => setMessage("trainerMsg", "Roster refreshed.", "success")).catch((err) => setMessage("trainerMsg", err.message || "Refresh failed.", "error")));
-    q("endSessionBtn").addEventListener("click", endSession);
-  }
-
-  bind();
+  window.addEventListener("DOMContentLoaded", async () => {
+    bindUi();
+    await restoreSession();
+  });
 })();
