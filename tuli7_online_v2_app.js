@@ -42,7 +42,9 @@
   function readableError(err){
     if(!err) return 'Unknown error';
     if(typeof err === 'string') return err;
-    return err.message || err.error_description || JSON.stringify(err);
+    const msg = err.message || err.error_description || JSON.stringify(err);
+    if(/duplicate key value/i.test(msg)) return 'Session name already exists';
+    return msg;
   }
   function validPin6(pin){ return /^\d{6}$/.test(pin); }
   function randomPin6(){ return String(Math.floor(100000 + Math.random() * 900000)); }
@@ -266,7 +268,10 @@
       players.forEach(p => {
         const div = document.createElement('div');
         div.className = 'item';
-        div.innerHTML = '<strong>' + escapeHtml(p.player_code || '') + '</strong><br>Side: ' + escapeHtml(p.side || '') + '<br>Status: ' + escapeHtml(p.status || '') + '<br>Cause: ' + escapeHtml(p.cause || '');
+        const statusClass = (p.status || 'OK').toLowerCase();
+        div.innerHTML =
+          '<div class="rosterhead"><span>' + escapeHtml(p.player_code || '') + '</span><span class="tag">' + escapeHtml(p.side || '') + '</span></div>' +
+          '<div class="meta">Status: <strong class="' + statusClass + '">' + escapeHtml(p.status || '') + '</strong><br>Cause: ' + escapeHtml(p.cause || '') + '</div>';
         q('rosterList').appendChild(div);
       });
       setMsg('trainerMsg', 'Roster updated.');
@@ -323,7 +328,9 @@
       events.forEach(ev => {
         const div = document.createElement('div');
         div.className = 'item';
-        div.innerHTML = '<strong>' + escapeHtml(ev.event_type || '') + '</strong><br><span>' + escapeHtml(new Date(ev.created_at).toLocaleString('fi-FI')) + '</span>';
+        div.innerHTML =
+          '<div class="rosterhead"><span>' + escapeHtml(ev.event_type || '') + '</span><span class="tag">' + escapeHtml(new Date(ev.created_at).toLocaleTimeString('fi-FI')) + '</span></div>' +
+          '<div class="meta">' + escapeHtml(new Date(ev.created_at).toLocaleString('fi-FI')) + '</div>';
         q('eventList').appendChild(div);
       });
       setMsg('eventMsg', 'Latest events loaded.');
@@ -470,14 +477,14 @@
 
     q('randomPinBtn').addEventListener('click', () => { q('createPin').value = randomPin6(); setMsg('createMsg', 'Arvottu 6-numeroinen PIN.'); });
     q('healthCheckBtn').addEventListener('click', async () => { try{ await healthCheck(); }catch(err){ log('Supabase check FAIL: ' + readableError(err)); } });
-    q('clearDebugBtn').addEventListener('click', () => { state.debugLines = []; q('homeStatus').textContent = 'Debug cleared.'; });
+    q('clearDebugBtn').addEventListener('click', () => { state.debugLines = []; q('homeStatus').textContent = 'Debug cleared. Waiting next event.'; });
 
     q('createSessionBtn').addEventListener('click', async () => {
       const name = q('createName').value.trim().toUpperCase();
       const pin = q('createPin').value.trim();
       if(!name){ setMsg('createMsg', 'Anna session name.'); return; }
       if(!validPin6(pin)){ setMsg('createMsg', 'PIN pitää olla 6 numeroa.'); return; }
-      setMsg('createMsg', 'Creating...');
+      setMsg('createMsg', 'Creating session...');
       try{
         const row = await createSession(name, pin);
         state.sessionId = row.id;
@@ -500,7 +507,7 @@
       const pin = q('joinPin').value.trim();
       if(!name || !pin){ setMsg('joinMsg', 'Anna session name ja PIN.'); return; }
       if(!validPin6(pin)){ setMsg('joinMsg', 'PIN pitää olla 6 numeroa.'); return; }
-      setMsg('joinMsg', 'Joining...');
+      setMsg('joinMsg', 'Joining session...');
       try{
         const row = await joinSession(name, pin);
         state.sessionId = row.id;
