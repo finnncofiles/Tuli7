@@ -1,226 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TULI7 V5</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-  <style>
-    :root{
-      --bg:#0b1020; --card:#121a2d; --line:#25324a; --text:#eef2ff; --muted:#9aa6bf;
-      --btn:#e5e7eb; --btntext:#111827; --chip:#1e293b; --blue:#2563eb;
-      --ok:#86efac; --warn:#fde68a; --danger:#fca5a5; --cold:#67e8f9;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
-    .wrap{width:min(1100px,100%);margin:0 auto;padding:16px}
-    .screen{display:none;min-height:100vh}
-    .screen.active{display:block}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0}
-    h1{font-size:44px;text-align:center;margin:18px 0 8px}
-    h2{font-size:28px;text-align:center;margin:12px 0}
-    h3{font-size:18px;margin:6px 0 10px}
-    .muted{color:var(--muted);text-align:center}
-    .btn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--btn);color:var(--btntext);font-size:20px;font-weight:700;cursor:pointer;margin:6px 0}
-    .pill{padding:12px 10px;border:none;border-radius:14px;background:var(--chip);color:#fff;font-size:16px;font-weight:700;cursor:pointer}
-    .pill.active{background:var(--blue)}
-    .row2,.row3,.row4{display:grid;gap:10px}
-    .row2{grid-template-columns:1fr 1fr}
-    .row3{grid-template-columns:repeat(3,1fr)}
-    .row4{grid-template-columns:repeat(4,1fr)}
-    input,select{width:100%;padding:14px;font-size:18px;border-radius:14px;border:1px solid var(--line);background:#0b1220;color:#fff;margin:6px 0 10px}
-    #map{height:420px;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
-    .sessionbox{border:1px solid var(--line); border-radius:16px; padding:14px; background:#0b1220;}
-    .idbox{text-align:center;font-size:44px;font-weight:800;margin:12px 0}
-    .banner{text-align:center;padding:12px;border-radius:14px;background:#1f2937;border:1px solid var(--line);font-size:18px;font-weight:700;margin-bottom:12px}
-    .status{text-align:center;font-size:24px;margin:10px 0}
-    .ok{color:var(--ok)} .warn{color:var(--warn)} .danger{color:var(--danger)} .cold{color:var(--cold)}
-    .list{display:grid;gap:8px}
-    .row{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, monospace}
-    .topline{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-    @media (max-width:760px){
-      h1{font-size:36px}
-      .row4{grid-template-columns:repeat(2,1fr)}
-      .row3{grid-template-columns:1fr 1fr 1fr}
-      #map{height:360px}
-      .idbox{font-size:38px}
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<title>TULI7 V5</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+body { margin:0; font-family:Arial; background:#0b0f14; color:#e6edf3; }
+.screen { display:none; padding:16px; }
+.active { display:block; }
+button { width:100%; padding:14px; margin:6px 0; border:none; border-radius:8px; background:#1f2937; color:white; font-size:16px; }
+button.active { background:#2563eb; }
+input { width:100%; padding:12px; margin:6px 0; border-radius:6px; border:none; background:#111827; color:white; }
+.status.ok { color:#22c55e; }
+.status.warn { color:#eab308; }
+.status.danger { color:#ef4444; }
+#map { height:300px; border-radius:10px; margin-top:10px; }
+</style>
 </head>
+
 <body>
+
 <div id="home" class="screen active">
-  <div class="wrap">
-    <h1>TULI7 V5</h1>
-    <div class="card">
-      <button class="btn" id="goCreateBtn">CREATE SESSION</button>
-      <button class="btn" id="goJoinBtn">JOIN SESSION</button>
-      <div class="muted">V5 baseline with Supabase, map and GPS geofence.</div>
-    </div>
-    <div class="card">
-      <h3>What this build is</h3>
-      <div class="muted" style="text-align:left;line-height:1.5">
-        TULI7 V5 is the stable baseline build. It uses a simple Supabase schema without security hardening.
-        Trainer creates a session, players join it, and both sides see live updates. Trainer creates zones on the map.
-        Player uses real GPS updates and geofence checks against live zones.
-      </div>
-    </div>
-  </div>
+  <h2>TULI7 V5</h2>
+  <button id="goCreateBtn">CREATE SESSION</button>
+  <button id="goJoinBtn">JOIN SESSION</button>
 </div>
 
 <div id="createScreen" class="screen">
-  <div class="wrap">
-    <h2>Create Session</h2>
-    <div class="card">
-      <input id="createSessionName" placeholder="Session name, e.g. ALFA1" />
-      <input id="createPin" inputmode="numeric" placeholder="PIN, e.g. 1111" />
-      <div class="row2">
-        <button class="btn" id="backFromCreate">BACK</button>
-        <button class="btn" id="createSessionBtn">CREATE</button>
-      </div>
-      <div class="muted mono" id="createMsg"></div>
-    </div>
-  </div>
-</div>
-
-<div id="joinScreen" class="screen">
-  <div class="wrap">
-    <h2>Join Session</h2>
-    <div class="card">
-      <input id="joinSessionName" placeholder="Session name" />
-      <input id="joinPin" inputmode="numeric" placeholder="PIN" />
-      <div class="row2">
-        <button class="btn" id="backFromJoin">BACK</button>
-        <button class="btn" id="joinSessionBtn">CONTINUE</button>
-      </div>
-      <div class="muted mono" id="joinMsg">Enter session name and PIN.</div>
-    </div>
-  </div>
-</div>
-
-<div id="sideScreen" class="screen">
-  <div class="wrap">
-    <h2>Select Side</h2>
-    <div class="card">
-      <div class="row2">
-        <button class="btn" id="blueBtn">BLUE</button>
-        <button class="btn" id="redBtn">RED</button>
-      </div>
-      <button class="btn" id="backFromSide">BACK</button>
-    </div>
-  </div>
+  <input id="createSessionName" placeholder="Session Name" />
+  <input id="createPin" placeholder="PIN" />
+  <button id="createSessionBtn">CREATE</button>
+  <div id="createMsg"></div>
+  <button id="backFromCreate">BACK</button>
 </div>
 
 <div id="createdScreen" class="screen">
-  <div class="wrap">
-    <h2>Session Created</h2>
-    <div class="card">
-      <div class="sessionbox">
-        <div class="muted">Active session</div>
-        <div class="idbox" id="createdName">-</div>
-        <div class="muted">PIN</div>
-        <div class="idbox" id="createdPin">----</div>
-      </div>
-      <div class="row2">
-        <button class="btn" id="createdHomeBtn">HOME</button>
-        <button class="btn" id="openTrainerBtn">OPEN TRAINER</button>
-      </div>
-    </div>
-  </div>
+  <div>Name: <span id="createdName"></span></div>
+  <div>PIN: <span id="createdPin"></span></div>
+  <button id="openTrainerBtn">OPEN TRAINER</button>
+  <button id="createdHomeBtn">HOME</button>
 </div>
 
-<div id="trainerScreen" class="screen">
-  <div class="wrap">
-    <h2 id="trainerTitle">TULI7 V5 / TRAINER</h2>
-    <div class="card">
-      <div class="sessionbox">
-        <div class="muted">Session</div>
-        <div class="idbox" id="trainerSessionName">-</div>
-        <div class="muted">PIN</div>
-        <div class="idbox" id="trainerSessionPin">----</div>
-      </div>
-    </div>
+<div id="joinScreen" class="screen">
+  <input id="joinSessionName" placeholder="Session Name" />
+  <input id="joinPin" placeholder="PIN" />
+  <button id="joinSessionBtn">JOIN</button>
+  <div id="joinMsg"></div>
+  <button id="backFromJoin">BACK</button>
+</div>
 
-    <div class="card">
-      <div class="topline">
-        <div class="row mono" id="blueCount">BLUE: 0</div>
-        <div class="row mono" id="redCount">RED: 0</div>
-        <div class="row mono" id="totalCount">TOTAL: 0</div>
-      </div>
-      <div class="list" id="rosterList" style="margin-top:10px;"></div>
-    </div>
-
-    <div class="card">
-      <div id="map"></div>
-    </div>
-
-    <div class="card">
-      <h3>Zone Mode</h3>
-      <div class="row4">
-        <button class="pill active" data-mode="ARTY">ARTY</button>
-        <button class="pill" data-mode="MINES">MINES</button>
-        <button class="pill" data-mode="CBRN">CBRN</button>
-        <button class="pill" id="clearMapBtn">CLEAR LOCAL</button>
-      </div>
-      <div class="muted" style="margin-top:10px">Tap map to create a zone at click point.</div>
-    </div>
-
-    <div class="card">
-      <h3>Event Log</h3>
-      <div class="list" id="eventLog"></div>
-    </div>
-
-    <div class="card">
-      <div class="row2">
-        <button class="btn" id="trainerHomeBtn">HOME</button>
-        <button class="btn" id="endSessionBtn">END SESSION</button>
-      </div>
-    </div>
-  </div>
+<div id="sideScreen" class="screen">
+  <button id="blueBtn">BLUE</button>
+  <button id="redBtn">RED</button>
 </div>
 
 <div id="playerScreen" class="screen">
-  <div class="wrap">
-    <h2>Player View</h2>
-    <div class="card">
-      <div class="banner" id="playerBanner">READY</div>
-      <div class="muted" id="playerSessionInfo">Session: -</div>
-      <div class="idbox" id="playerId">-</div>
-      <div class="status ok" id="playerStatus">STATUS: OK</div>
-      <div class="muted" id="playerCause">CAUSE: NONE</div>
-    </div>
+  <div id="playerSessionInfo"></div>
+  <div>ID: <span id="playerId"></span></div>
+  <div id="playerStatus" class="status ok">STATUS: OK</div>
+  <div id="playerCause">CAUSE: NONE</div>
+  <div id="zoneInfo">Zone: NONE</div>
+  <div id="gpsInfo">GPS inactive</div>
 
-    <div class="card">
-      <h3>GPS / Geofence</h3>
-      <div class="row2">
-        <button class="pill" id="gpsStartBtn">START GPS</button>
-        <button class="pill" id="gpsStopBtn">STOP GPS</button>
-      </div>
-      <div class="muted mono" id="gpsInfo" style="margin-top:10px">GPS inactive</div>
-      <div class="muted mono" id="zoneInfo" style="margin-top:6px">Zone: NONE</div>
-    </div>
+  <button id="gpsStartBtn">START GPS</button>
+  <button id="gpsStopBtn">STOP GPS</button>
 
-    <div class="card">
-      <h3>Manual status</h3>
-      <div class="row4">
-        <button class="pill" id="supBtn">SUP</button>
-        <button class="pill" id="wiaBtn">WIA</button>
-        <button class="pill" id="kiaBtn">KIA</button>
-        <button class="pill" id="resetPlayerBtn">RESET</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="row2">
-        <button class="btn" id="playerHomeBtn">HOME</button>
-        <button class="btn" id="playerRefreshBtn">REFRESH ZONES</button>
-      </div>
-    </div>
-  </div>
+  <button id="supBtn">SUP</button>
+  <button id="wiaBtn">WIA</button>
+  <button id="kiaBtn">KIA</button>
+  <button id="resetPlayerBtn">RESET</button>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="app_v5.js"></script>
+<div id="trainerScreen" class="screen">
+  <h3 id="trainerTitle"></h3>
+
+  <button data-mode="ARTY" class="active">ARTY</button>
+  <button data-mode="MINES">MINES</button>
+  <button data-mode="CBRN">CBRN</button>
+
+  <div id="map"></div>
+
+  <div id="blueCount"></div>
+  <div id="redCount"></div>
+  <div id="totalCount"></div>
+
+  <div id="rosterList"></div>
+
+  <button id="clearMapBtn">CLEAR MAP</button>
+  <button id="endSessionBtn">END SESSION</button>
+</div>
+
+<script src="app_v5.js" defer></script>
+
 </body>
 </html>
