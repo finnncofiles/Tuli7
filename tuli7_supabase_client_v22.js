@@ -1,3 +1,4 @@
+// FIXED SUPABASE CLIENT
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 export const supabaseUrl = 'https://fczmfxhgrpdljgtvpihl.supabase.co'
@@ -6,9 +7,12 @@ export const supabaseKey = 'sb_publishable_g4QxKz3RxiCx_a3GgH75wg_XnduFosO'
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function createSession(sessionName, pin) {
+  const cleanName = (sessionName || '').trim().toUpperCase()
+  const cleanPin = String(pin || '').trim()
+
   const { data, error } = await supabase
     .from('sessions')
-    .insert([{ session_name: sessionName.toUpperCase(), pin, status: 'active' }])
+    .insert([{ session_name: cleanName, pin: cleanPin, status: 'active' }])
     .select()
     .single()
   if (error) throw error
@@ -16,11 +20,14 @@ export async function createSession(sessionName, pin) {
 }
 
 export async function joinSession(sessionName, pin) {
+  const cleanName = (sessionName || '').trim().toUpperCase()
+  const cleanPin = String(pin || '').trim()
+
   const { data, error } = await supabase
     .from('sessions')
     .select('*')
-    .eq('session_name', sessionName.toUpperCase())
-    .eq('pin', pin)
+    .eq('session_name', cleanName)
+    .eq('pin', cleanPin)
     .eq('status', 'active')
     .maybeSingle()
   if (error) throw error

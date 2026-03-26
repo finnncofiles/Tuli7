@@ -1,3 +1,4 @@
+<!-- FIXED INDEX (error handling + normalization) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1012,7 +1013,7 @@ import { createSession as sbCreateSession, joinSession as sbJoinSession, listSes
     q("createdOpenTrainerBtn").addEventListener("click", () => show("trainerScreen"));
 
     q("createSessionBtn").addEventListener("click", async () => {
-      const name = q("sessionNameInput").value.trim();
+      const name = q("sessionNameInput").value.trim().toUpperCase();
       const pin = q("sessionPinInput").value.trim();
       if (!name || !pin) return;
       try {
@@ -1026,7 +1027,7 @@ import { createSession as sbCreateSession, joinSession as sbJoinSession, listSes
         await sbLogEvent(state.sessionId, 'session_created', { session_name: state.sessionName });
         show("sessionCreatedScreen");
       } catch (e) {
-        alert("Create session failed");
+        console.error(e); alert("Create failed: " + (e?.message || e));
       }
     });
 
